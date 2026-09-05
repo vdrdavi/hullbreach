@@ -224,5 +224,12 @@ Identificadores e comentários em português; arquivos de `src/` sem acentuaçã
 `README.md` e `docs/` com acentuação normal. Mensagens de commit em português,
 com o corpo explicando **por que** a mudança foi feita.
 
+**Cada tela tem três nomes** — o tipo (`<Palavra>Scene`, uma palavra em inglês),
+o nome de ficção usado em prosa ("a bancada", "o convés") e o título em caixa
+alta desenhado na tela —, mais o `Acao::<Nome>` da tecla que a abre. A tabela com
+os nomes de todas elas e as regras de cada um dos três está em
+[docs/ARQUITETURA.md § Como se chamam as telas](docs/ARQUITETURA.md#como-se-chamam-as-telas):
+tela nova ganha uma linha ali **antes** do `.cpp`.
+
 Mais detalhes em [README.md](README.md), [docs/ARQUITETURA.md](docs/ARQUITETURA.md)
 e [docs/FUNCIONAMENTO.md](docs/FUNCIONAMENTO.md).

@@ -47,6 +47,83 @@ Quem é dono de tudo é o `App`: ele cria janela, renderer e subsistemas, e pass
 a cada cena um `Context` com referências para eles (`input`, `assets`, `audio`,
 `fonte`, `cenas`). Nenhum subsistema é global.
 
+## Como se chamam as telas
+
+Cada tela do jogo tem **três nomes**, com três públicos diferentes, e eles não
+precisam ser traduções um do outro — precisam ser sobre a mesma coisa. A tabela
+abaixo é a fonte da verdade; quem for criar uma tela nova acrescenta uma linha
+antes de escrever o `.cpp`.
+
+| Tipo e arquivo | Nome de ficção (docs, comentários, commits) | Título na tela | Como se chega |
+| --- | --- | --- | --- |
+| `MenuScene` | o menu | — | tela inicial |
+| `InteriorScene` | o convés | — | `Jogar` no menu |
+| `FlightScene` | a cabine | — | `E` no painel de pilotagem |
+| `StatusScene` | o diagnóstico do casco | `DIAGNOSTICO DO CASCO` | `Q` no painel de pilotagem |
+| `PowerScene` | a repartição de energia | `REPARTICAO DE ENERGIA` | `R` no painel de pilotagem |
+| `RepairScene` | a bancada de reparo | `BANCADA DE REPARO` | `E` na bancada |
+| `PauseScene` | a pausa | `PAUSADO` | `Esc` de qualquer lugar da partida |
+| `GameOverScene` | o fim da viagem | `NAVE PERDIDA` | o casco zerou |
+| `DebugScene` | a tela de depuração | `DEPURACAO` | `F3`, só no build debug |
+
+### 1. O tipo e o arquivo
+
+`<Palavra>Scene`: **uma** palavra em inglês, PascalCase, e o arquivo
+`src/scenes/<Nome>Scene.hpp`/`.cpp` com exatamente esse nome. Sufixo, nunca
+prefixo, e nunca `Tela...` — tipos deste projeto são em inglês, e é só neles que
+a convenção geral de escrever identificadores em português abre exceção.
+
+A palavra nomeia **o lugar ou o assunto**, não o que a tela desenha nem o que o
+jogador faz nela: `Repair`, e não `Welding` nem `RepairPanel`; `Power`, e não
+`EnergySplit`. Uma palavra só é o que mantém a lista legível na `src/scenes/` e
+o que impede que a tela seja batizada pela sua mecânica atual, que é justamente
+a parte que muda.
+
+### 2. O nome de ficção
+
+É como a tela é chamada em prosa — nos `docs/`, nos comentários e no corpo das
+mensagens de commit: substantivo em português, **com artigo**, nomeando o móvel
+ou o cômodo da nave, não a mecânica que roda ali. "A bancada", e não "o minigame
+de solda". "O convés", e não "a cena do interior".
+
+Em prosa, o nome de ficção; em `código`, o tipo. Escrever "a cena de status" é o
+único jeito errado, porque mistura os dois e não é nenhum. Os dois nomes podem
+divergir de forma — `StatusScene` é *o diagnóstico do casco* —, e é para isso
+que a tabela existe: divergir tudo bem, ter que adivinhar não.
+
+### 3. O título na tela
+
+Aqui não há uma regra só, porque não são todas o mesmo tipo de tela:
+
+- **Os mundos** (`InteriorScene`, `FlightScene`) e o menu **não têm título**.
+  Quem diz onde o jogador está é a imagem; um rótulo por cima do convés seria
+  legenda de foto.
+- **Os painéis do convés** (`StatusScene`, `PowerScene`, `RepairScene`) levam o
+  nome do assunto: substantivo, sem artigo e sem verbo — `DIAGNOSTICO DO CASCO`,
+  não `DIAGNOSTICAR O CASCO` nem `PAINEL DO CASCO`. Eles se abrem por cima do
+  convés, que continua visível atrás, e o título é o que diz qual dos três
+  abriu.
+- **As telas de estado** (`PauseScene`, `GameOverScene`) levam **o estado em que
+  o jogo está**, e não o nome da tela: `PAUSADO` e `NAVE PERDIDA`, jamais
+  `PAUSA` ou `FIM DE JOGO`. Quem está lendo já está olhando para a tela; o que
+  ele não sabe é o que aconteceu com a partida.
+
+Sempre em caixa alta e **sem acentuação** — não por limitação da fonte (o atlas
+tem `À Á Â Ã Ç É Ê Í Ó Ô Õ Ú`), mas porque os arquivos de `src/` são escritos sem
+acento, e o título é um literal que mora lá. Desenhe com
+`fonte.desenharCentralizado` no topo do vidro do painel, e posicione o resto a
+partir de `alturaLinha()`, nunca de uma constante.
+
+### 4. A ação que abre
+
+A tecla vira `Acao::<Nome>` (`src/input/Input.cpp`), em português, nomeada pelo
+**assunto** — nunca pela tecla (`Diagnostico`, não `Q`) e nunca pelo tipo da cena
+(`Diagnostico`, não `Status`). Ações de comando e navegação são verbos no
+infinitivo (`Confirmar`, `Voltar`, `Pausar`, `Interagir`); ações que abrem um
+painel são o substantivo do assunto (`Diagnostico`, `Energia`). É por isso que
+`Acao::Interagir` serve ao painel e à bancada sem conflito: ela não é "a tecla do
+painel", é o gesto de usar o móvel que estiver ao alcance.
+
 ## Como adicionar uma cena
 
 ```cpp
@@ -98,7 +175,8 @@ Ela é **estado de cena, não uma cena de overlay**: uma cena teria que sobreviv
 à troca da cena de baixo — coisa que uma pilha não faz — e, ocupando o topo,
 tiraria de quem está embaixo o passo de simulação do voo.
 
-Cadastre o `.cpp` novo na lista de fontes do `CMakeLists.txt`.
+Cadastre o `.cpp` novo na lista de fontes do `CMakeLists.txt`, e o nome da tela
+na tabela da seção anterior.
 
 Uma cena que só existe para quem desenvolve entra por outro caminho: a
 [`DebugScene`](../src/scenes/DebugScene.hpp), que o **F3** abre e fecha, é

@@ -56,6 +56,7 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     // nao sobrevive a um recomeco: ela e uma decisao desta viagem.
     energia_ = Reparticao{};
     alcance_ = alcanceDoSensorDe(energia_.sensor);
+    alcanceVisivel_ = alcanceVisivelDe(energia_.sensor);
     velocidade_ = velocidadeDeCruzeiroDe(energia_.motor);
     turbo_ = false;
     batida_ = 0.0f;
@@ -180,10 +181,13 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     ambiente_ = aproximar(ambiente_, alvo, kTaxaAmbiente, dt);
     ctx.audio.ajustarGanho(vozAmbiente_, ambiente_);
 
-    // O sensor abre e fecha pela mesma rampa, pelo mesmo motivo: a nevoa e a
-    // primeira coisa que o jogador ve da reparticao, e ela recuando devagar e
-    // o que mostra a energia chegando ao sistema.
+    // A janela do sensor abre e fecha pela mesma rampa, pelo mesmo motivo: a
+    // nevoa e a primeira coisa que o jogador ve da reparticao, e ela recuando
+    // devagar e o que mostra a energia chegando ao sistema. As duas pontas
+    // andam juntas, senao a faixa de desvanecimento se deformaria no caminho.
     alcance_ = aproximar(alcance_, alcanceDoSensorDe(energia_.sensor), kTaxaSensor, dt);
+    alcanceVisivel_ =
+        aproximar(alcanceVisivel_, alcanceVisivelDe(energia_.sensor), kTaxaSensor, dt);
 
     // O alarme do casco critico. A fase anda sempre, com casco inteiro ou nao;
     // quem entra e sai e a intensidade, pela mesma rampa do ambiente -- o

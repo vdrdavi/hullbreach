@@ -998,12 +998,12 @@ então aqui não se melhora nada: só se decide **de onde tirar**. Quem escolhe 
 painel de pilotagem, no `R` (`PowerScene`, seção 13); quem guarda a regra é o
 `Flight`, porque é regra da nave.
 
-| Pontos | Motor (cruzeiro) | Sensor (alcance) | Casco (dano por rocha) |
+| Pontos | Motor (cruzeiro) | Sensor (nítido / vê até) | Casco (dano por rocha) |
 |---|---|---|---|
-| 1 | 30 u/s | 20 u | 0,25 — 4 batidas |
-| **2** | **62 u/s** | **45 u** | **0,125 — 8 batidas** |
-| 3 | 82 u/s | 70 u | 0,084 — 12 batidas |
-| 4 | 100 u/s | 95 u | 0,0625 — 16 batidas |
+| 1 | 30 u/s | 12 u / 55 u | 0,25 — 4 batidas |
+| **2** | **62 u/s** | **45 u / 110 u** | **0,125 — 8 batidas** |
+| 3 | 82 u/s | 70 u / 155 u | 0,084 — 12 batidas |
+| 4 | 100 u/s | 95 u / 200 u | 0,0625 — 16 batidas |
 
 **A linha do meio é o jogo como ele sempre foi**, número por número, e isso não é
 coincidência: a viagem começa em (2, 2, 2), e é o que mantém válido todo o ajuste
@@ -1015,13 +1015,26 @@ metade do alcance, o dobro do estrago por rocha — e daí para cima o ganho é 
 modesto. Sem isso a repartição vira decoração, porque deixar um sistema no mínimo
 não custaria nada e o jogador poria três em 1 para pôr um em 4.
 
-O sensor merece uma nota à parte, porque ele não muda só o alcance: o **fim** da
-névoa é sempre a borda do campo (raio 110), então o número da tabela é também a
-largura da faixa em que a rocha desvanece. No mínimo sobram 90 unidades de faixa
-e o campo inteiro é uma sopa que só clareia em cima da nave; no máximo sobram 15,
-e a pedra aparece nítida de longe, com um desvanecimento curto na borda em vez de
-um gradiente cobrindo a tela. Os dois extremos não são o mesmo campo mais perto
-ou mais longe — são duas vistas diferentes.
+O sensor merece uma nota à parte, porque ele não é um número: é uma **janela de
+visão**, o par que dá o início e o fim da névoa. Até o primeiro a rocha aparece
+como ela é; do primeiro ao segundo ela vai virando a cor do fundo; **além do
+segundo o `Renderer3D` nem a desenha**, porque ela já seria fundo.
+
+Mover só o início não dava disparidade nenhuma, e a razão era o teto: o fim era a
+borda do campo de rochas (raio 110), então com o início em 100 sobrariam 10
+unidades de faixa e a pedra estalaria na tela em vez de emergir. Com as duas
+pontas soltas, os extremos passam a ser duas vistas diferentes, e não a mesma
+vista mais perto ou mais longe:
+
+- **no mínimo**, além de 55 unidades não há nada desenhado. O campo vira uma
+  bolha estreita de bruma que só clareia em cima da nave, e a maior parte das
+  rochas some da tela — não escurece, some;
+- **no máximo**, o fim (200) está bem além da borda do campo, então nem a pedra
+  mais distante chega a 15% de névoa: vê-se o campo inteiro nítido, até onde ele
+  existe.
+
+O fim passar do raio do campo não desperdiça nada — é justamente o que garante
+que no máximo não sobre névoa nenhuma sobre o que existe de fato.
 
 O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
 sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o
@@ -1037,12 +1050,14 @@ terceiro número, e é esse que o jogador sente:
 segundos de aviso = alcance do sensor ÷ velocidade de cruzeiro
 ```
 
-É o tempo entre a rocha sair da névoa e alcançar a nave. As dez repartições
-possíveis o espalham de **0,20 s a 3,17 s**, um intervalo de dezesseis vezes, com
-(2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três sistemas de uma
-vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s enxergando 20 unidades à
-frente e cede em quatro rochas; `M1 S4 C1` enxerga 95 unidades com 3,17 s de
-folga, mas se arrasta a 30 u/s e cede nas mesmas quatro.
+É o tempo entre a rocha ficar **nítida** e alcançar a nave — a medida
+conservadora, porque a pedra já se insinua na névoa antes disso. As dez
+repartições possíveis o espalham de **0,12 s a 3,17 s**, um intervalo de vinte e
+seis vezes, com (2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três
+sistemas de uma vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s com a
+pedra saindo do borrão a 12 unidades do nariz e cede em quatro rochas; `M1 S4 C1`
+enxerga o campo inteiro com 3,17 s de folga, mas se arrasta a 30 u/s e cede nas
+mesmas quatro.
 
 O painel **não mostra esse número** — ele mostra o que cada sistema comprou, e a
 conta de quanto tempo isso dá para reagir fica com o jogador. Quem quiser vê-lo
@@ -1255,11 +1270,11 @@ sobrevive à cabine.
 O que ela acrescenta é a apresentação: a câmera de terceira pessoa, o campo de
 estrelas, a névoa, a HUD, o brilho do escapamento e o clarão da batida.
 
-A **névoa é regulada a cada quadro**, e não uma vez no `aoEntrar`: o início dela é
-o alcance do sensor da nave (seção 12), que muda de tamanho quando a energia se
-reparte no convés. O fim continua sendo a borda do campo de rochas — o que a
-repartição move é de quão longe a pedra já é visível, não até onde o campo
-existe.
+A **névoa é regulada a cada quadro**, e não uma vez no `aoEntrar`: as duas pontas
+dela são a janela do sensor da nave (seção 12), que muda de tamanho quando a
+energia se reparte. O fim não é a borda do campo: com o sensor no mínimo ele fica
+bem aquém dela, e o que estiver além simplesmente não é desenhado — é essa bolha
+estreita que dá ao sensor sacrificado um preço que se vê.
 
 A câmera persegue um ponto atrás e acima da nave (`{0, 1.4, 5}` no espaço dela) e
 **olha 14 unidades à frente** da nave, não para a nave: mirar adiante mantém o
@@ -1419,7 +1434,9 @@ perseguem a simulação, são a escolha do jogador, e um painel aberto por cima 
 reparte energia por conta própria (seção 5).
 
 Cada fileira diz o que a energia comprou ali — `CRUZEIRO 62 u/s`, `ALCANCE 45 u`,
-`AGUENTA 8 ROCHAS` —, e é só isso. Os segundos de aviso (seção 12) são a conta
+`AGUENTA 8 ROCHAS` —, e é só isso. O alcance mostrado é o **nítido**, e não o
+`vê até`: é a distância em que a rocha é inconfundível, que é a acionável. O
+quanto a janela inteira mudou se vê na cabine, não se lê aqui. Os segundos de aviso (seção 12) são a conta
 que amarra as duas primeiras, mas quem a faz é o jogador: pôr o número pronto na
 tela transformaria a escolha em ler qual linha tem o maior valor.
 

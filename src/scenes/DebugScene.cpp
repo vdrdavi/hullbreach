@@ -179,9 +179,10 @@ void desenharNave(Coluna& coluna, Flight* voo) {
     const Flight::Reparticao& energia = voo->energia();
     coluna.campo("energia", texto("M%d S%d C%d  (reserva %d)", energia.motor, energia.sensor,
                                   energia.casco, voo->reserva()));
-    coluna.campo("aviso", texto("%.2f s  (sensor %.0f u)",
+    coluna.campo("aviso", texto("%.2f s  (nitido %.0f, ve %.0f)",
                                 static_cast<double>(Flight::segundosDeAvisoDe(energia)),
-                                static_cast<double>(voo->alcanceDoSensor())));
+                                static_cast<double>(voo->alcanceDoSensor()),
+                                static_cast<double>(voo->alcanceVisivel())));
 
     const Flight::Pose& pose = voo->pose();
     coluna.campo("posicao", texto("%.0f %.0f %.0f", static_cast<double>(pose.posicao.x),

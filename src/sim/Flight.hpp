@@ -85,15 +85,30 @@ public:
     /// ela comecaria a atravessar pedra sem nunca encostar nela.
     static constexpr float kTurboPorPonto[kPontoMaximo + 1] = {95.0f, 95.0f, 185.0f, 215.0f,
                                                                240.0f};
-    /// De quao longe a rocha ja e visivel: e o inicio da nevoa da FlightScene,
-    /// que antes era uma constante dela. O fim da nevoa e a borda do campo
-    /// (raio 110), entao este numero e tambem a **largura da faixa de
-    /// desvanecimento** -- e os dois extremos nao mudam so o alcance, mudam o
-    /// tipo de vista. No minimo sobram 90 unidades de faixa e o campo inteiro e
-    /// uma sopa que so clareia em cima da nave; no maximo sobram 15, e a rocha
-    /// aparece nitida de longe, com um desvanecimento curto na borda em vez de
-    /// um gradiente que cobre a tela. E o sensor cortando a bruma.
-    static constexpr float kSensorPorPonto[kPontoMaximo + 1] = {20.0f, 20.0f, 45.0f, 70.0f, 95.0f};
+    /// O sensor e uma **janela de visao**, e nao um so numero: o par abaixo e o
+    /// inicio e o fim da nevoa da FlightScene. Ate o primeiro a rocha aparece
+    /// como ela e; do primeiro ao segundo ela vai virando a cor do fundo; alem
+    /// do segundo o Renderer3D nem a desenha, porque ja seria fundo.
+    ///
+    /// Mover so o inicio nao dava disparidade nenhuma. O fim era a borda do
+    /// campo (raio 110), entao o teto batia ali: com o inicio em 100 sobrariam
+    /// 10 unidades de faixa e a pedra estalaria na tela em vez de emergir. Com
+    /// os dois soltos, os extremos passam a ser **duas vistas diferentes**, e
+    /// nao a mesma vista mais perto ou mais longe:
+    ///
+    /// - no minimo, alem de 55 unidades nao ha nada desenhado. O campo vira uma
+    ///   bolha estreita de bruma que so clareia em cima da nave, e a rocha
+    ///   materializa-se do vazio a menos de um segundo do casco;
+    /// - no maximo, o fim (200) esta bem alem da borda do campo, entao nem a
+    ///   pedra mais distante chega a 15% de nevoa: ve-se o campo inteiro nitido,
+    ///   ate onde ele existe.
+    ///
+    /// O fim passar do raio do campo nao desperdica nada -- e o que garante que
+    /// no maximo nao sobre nevoa nenhuma sobre o que existe.
+    static constexpr float kSensorNitidoPorPonto[kPontoMaximo + 1] = {12.0f, 12.0f, 45.0f, 70.0f,
+                                                                      95.0f};
+    static constexpr float kSensorVisivelPorPonto[kPontoMaximo + 1] = {55.0f, 55.0f, 110.0f,
+                                                                       155.0f, 200.0f};
     /// Quanto do casco cada rocha leva embora: quatro, oito, doze ou dezesseis
     /// batidas do casco inteiro ao nada. Os valores sao escolhidos para
     /// batidasSuportadasDe dar numero redondo -- 0,084 e um pouco menos que um
@@ -111,8 +126,15 @@ public:
     static constexpr float velocidadeDeTurboDe(int pontos) {
         return kTurboPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
     }
+    /// Ate onde a rocha aparece sem nevoa nenhuma. E o numero acionavel -- o
+    /// que o painel mostra e de onde saem os segundos de aviso --, porque e a
+    /// distancia em que ela e inconfundivel.
     static constexpr float alcanceDoSensorDe(int pontos) {
-        return kSensorPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+        return kSensorNitidoPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+    /// Ate onde ainda ha o que ver. Alem disto o Renderer3D descarta a face.
+    static constexpr float alcanceVisivelDe(int pontos) {
+        return kSensorVisivelPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
     }
     static constexpr float danoPorBatidaDe(int pontos) {
         return kDanoPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
@@ -174,10 +196,12 @@ public:
     /// proxima tela que mexer na energia nao pode precisar lembrar dela.
     bool repartirEnergia(const Reparticao& nova);
 
-    /// O alcance do sensor como ele esta **agora**: o valor da reparticao
-    /// perseguido em rampa, e nao o da tabela. Repartir no conves nao pode
-    /// fazer a nevoa saltar na cara de quem estiver na cabine.
+    /// A janela do sensor como ela esta **agora**: os valores da reparticao
+    /// perseguidos em rampa, e nao os da tabela. Repartir no painel nao pode
+    /// fazer a nevoa saltar na cara de quem estiver na cabine -- ela abre e
+    /// fecha, que e a primeira coisa que se ve da energia chegando ao sistema.
     float alcanceDoSensor() const { return alcance_; }
+    float alcanceVisivel() const { return alcanceVisivel_; }
     /// Quanto a proxima rocha vai custar de casco.
     float danoPorBatida() const { return danoPorBatidaDe(energia_.casco); }
 
@@ -239,8 +263,9 @@ private:
     AsteroidField rochas_;
 
     Reparticao energia_;
-    /// O alcance do sensor perseguindo o da reparticao; veja alcanceDoSensor().
+    /// A janela do sensor perseguindo a da reparticao; veja alcanceDoSensor().
     float alcance_{alcanceDoSensorDe(kPontoNeutro)};
+    float alcanceVisivel_{alcanceVisivelDe(kPontoNeutro)};
 
     float velocidade_{velocidadeDeCruzeiroDe(kPontoNeutro)};
     float batida_{0.0f};

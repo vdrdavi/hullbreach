@@ -177,13 +177,14 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     }
 
     cena_.definirCamera(camera);
-    // A nevoa e regulada a cada quadro porque seu inicio e o alcance do sensor,
-    // e o sensor muda de tamanho quando a energia se reparte no conves. O fim
-    // continua sendo a borda do campo: o que a reparticao move e de quao longe a
-    // rocha ja e visivel, nao ate onde o campo existe.
+    // A nevoa e regulada a cada quadro porque as duas pontas dela sao a janela
+    // do sensor, e o sensor muda de tamanho quando a energia se reparte. O fim
+    // nao e mais a borda do campo: com o sensor no minimo ele fica bem aquem
+    // dela, e o que estiver alem simplesmente nao e desenhado -- e essa bolha
+    // estreita que da ao sensor sacrificado um preco que se ve.
     cena_.definirNevoa(SDL_FColor{kCorEspaco.r / 255.0f, kCorEspaco.g / 255.0f,
                                   kCorEspaco.b / 255.0f, 1.0f},
-                       voo_.alcanceDoSensor(), voo_.rochas().raio());
+                       voo_.alcanceDoSensor(), voo_.alcanceVisivel());
     cena_.iniciarQuadro();
 
     // Vazio do espaco
