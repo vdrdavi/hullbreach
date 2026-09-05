@@ -1001,14 +1001,28 @@ porque é regra da nave.
 
 | Pontos | Motor (cruzeiro) | Sensor (alcance) | Casco (dano por rocha) |
 |---|---|---|---|
-| 1 | 44 u/s | 30 u | 0,175 — 6 batidas |
+| 1 | 30 u/s | 20 u | 0,25 — 4 batidas |
 | **2** | **62 u/s** | **45 u** | **0,125 — 8 batidas** |
-| 3 | 80 u/s | 60 u | 0,094 — 11 batidas |
-| 4 | 98 u/s | 75 u | 0,069 — 15 batidas |
+| 3 | 82 u/s | 70 u | 0,084 — 12 batidas |
+| 4 | 100 u/s | 95 u | 0,0625 — 16 batidas |
 
 **A linha do meio é o jogo como ele sempre foi**, número por número, e isso não é
 coincidência: a viagem começa em (2, 2, 2), e é o que mantém válido todo o ajuste
 que já tinha sido feito antes de a energia se repartir.
+
+**O degrau de baixo é o maior dos três, de propósito.** As tabelas não sobem em
+passos iguais: do 1 para o 2 se paga caro — metade da velocidade, menos da
+metade do alcance, o dobro do estrago por rocha — e daí para cima o ganho é mais
+modesto. Sem isso a repartição vira decoração, porque deixar um sistema no mínimo
+não custaria nada e o jogador poria três em 1 para pôr um em 4.
+
+O sensor merece uma nota à parte, porque ele não muda só o alcance: o **fim** da
+névoa é sempre a borda do campo (raio 110), então o número da tabela é também a
+largura da faixa em que a rocha desvanece. No mínimo sobram 90 unidades de faixa
+e o campo inteiro é uma sopa que só clareia em cima da nave; no máximo sobram 15,
+e a pedra aparece nítida de longe, com um desvanecimento curto na borda em vez de
+um gradiente cobrindo a tela. Os dois extremos não são o mesmo campo mais perto
+ou mais longe — são duas vistas diferentes.
 
 O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
 sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o
@@ -1024,10 +1038,13 @@ terceiro número, e é esse que o jogador sente:
 segundos de aviso = alcance do sensor ÷ velocidade de cruzeiro
 ```
 
-É o tempo entre a rocha sair da névoa e alcançar a nave. Com (2, 2, 2) dá 0,73 s;
-com o motor no talo e o sensor no mínimo, 0,31 s — menos da metade, e ainda com o
-casco no mínimo, porque não sobrou ponto. O painel mostra esse número grande e
-sozinho: as três fileiras são a conta, e ele é o resultado.
+É o tempo entre a rocha sair da névoa e alcançar a nave. As dez repartições
+possíveis o espalham de **0,20 s a 3,17 s**, um intervalo de dezesseis vezes, com
+(2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três sistemas de uma
+vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s enxergando 20 unidades à
+frente e cede em quatro rochas; `M1 S4 C1` enxerga 95 unidades com 3,17 s de
+folga, mas se arrasta a 30 u/s e cede nas mesmas quatro. O painel mostra esse
+número grande e sozinho: as três fileiras são a conta, e ele é o resultado.
 
 Duas coisas saem de graça da arquitetura que já existia:
 
@@ -1334,7 +1351,9 @@ a `FlightScene` e a `StatusScene`, ela guarda uma referência para o `Flight` da
 `InteriorScene`, bloqueia o update de baixo e **passa a ser quem chama
 `Flight::atualizar`** com `Comando{}` — um passo por passo fixo, o invariante da
 seção 12. Enquanto se solda, **ninguém está vendo o campo de rochas**. A rocha
-que chegar cobra 0,125 do casco, mais do que três acertos devolvem, e ainda
+que chegar cobra o que a blindagem deixar — 0,125 com a energia em partes
+iguais, e o dobro disso com o casco no mínimo —, mais do que três acertos
+devolvem, e ainda
 desmancha a série em andamento: o preço do erro e o preço da pedra são o mesmo de
 propósito. É por isso que a punição do minigame pode ser tão branda — a punição
 de verdade já está do lado de fora, e o único recurso que a bancada gasta é
