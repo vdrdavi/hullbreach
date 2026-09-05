@@ -16,6 +16,10 @@ namespace jogo {
 /// Interior da nave: o jogador anda pelo convés e, no painel de pilotagem da
 /// parede superior, aperta E para assumir os controles (abre a FlightScene).
 ///
+/// O conves tem tres moveis, e e a distancia entre eles que os torna decisoes:
+/// o painel, a bancada de reparo e o repartidor de energia. Chegar a qualquer
+/// um custa largar os controles e atravessar a nave, que nao para de voar.
+///
 /// E daqui que o voo e tocado: a nave nao para de voar porque o piloto saiu da
 /// cabine, entao o Flight vive nesta cena (que existe pela viagem inteira) e e
 /// atualizado em piloto automatico enquanto o jogador anda la dentro. Uma
@@ -46,6 +50,8 @@ private:
     static constexpr float kZoom = 2.0f;
     /// Para onde o zoom vai enquanto a cortina fecha sobre o painel.
     static constexpr float kZoomConsole = 3.1f;
+    /// Quanto a tarja de convite guarda das bordas da tela.
+    static constexpr float kMargemDaTarja = 6.0f;
 
     /// Clipes da folha textures/player.png: uma linha por estado, quatro
     /// quadros por linha. O ritmo do andar sai da velocidade -- a 96 u/s um
@@ -60,6 +66,7 @@ private:
     SDL_FRect limitesDoMundo() const;
     bool pertoDoConsole() const;
     bool pertoDaBancada() const;
+    bool pertoDaEnergia() const;
     /// Inclina a camera sobre o painel na mesma medida em que a cortina fecha.
     void aproximarDoConsole(float dt);
     /// Escolhe o clipe pelo que o jogador esta fazendo e anda o temporizador.
@@ -97,10 +104,19 @@ private:
     SDL_FRect bancada_{0.0f, 0.0f, 48.0f, 32.0f};
     SDL_FRect zonaDaBancada_{0.0f, 0.0f, 0.0f, 0.0f};
 
+    /// O repartidor de energia, no canto oposto ao da bancada. Com ele o conves
+    /// vira um triangulo -- painel em cima ao centro, solda embaixo a esquerda,
+    /// energia embaixo a direita --, e andar por ele passa a ser escolher qual
+    /// das tres coisas se vai fazer com o tempo que a viagem esta cobrando.
+    /// Como a bancada, encosta na parede de baixo: chega-se por cima.
+    SDL_FRect energia_{0.0f, 0.0f, 48.0f, 32.0f};
+    SDL_FRect zonaDaEnergia_{0.0f, 0.0f, 0.0f, 0.0f};
+
     Sprite jogador_;
     Animacao animacaoJogador_;
     Sprite consoleSprite_;
     Sprite bancadaSprite_;
+    Sprite energiaSprite_;
     SDL_Texture* tiles_{nullptr};
     Audio::SomId somConfirmar_{0};
 };

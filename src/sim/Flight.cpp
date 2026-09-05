@@ -20,10 +20,10 @@ constexpr float kRaioNave = 2.0f;
 // Batida: a nave quase para e o baque decai por si.
 constexpr float kVelocidadeAposBatida = 18.0f;
 constexpr float kDecaimentoBatida = 3.4f;  // 1/s
-/// Quanto do casco cada rocha leva embora: oito batidas do casco inteiro ao
-/// zero, o bastante para o mostrador do painel andar de forma visivel sem que
-/// uma distracao acabe a viagem.
-constexpr float kDanoPorBatida = 0.125f;
+/// Com que rapidez o alcance do sensor persegue o da reparticao. Lento de
+/// proposito: repartir a energia e uma decisao com consequencia, e a nevoa
+/// abrindo ou fechando devagar e o que a torna visivel.
+constexpr float kTaxaSensor = 1.6f;
 
 // Ruido do casco: sempre presente, mais forte quando o motor abre.
 constexpr float kAmbienteCruzeiro = 0.45f;
@@ -51,7 +51,12 @@ float aproximar(float atual, float alvo, float taxa, float dt) {
 void Flight::iniciar(Context& ctx, Uint32 semente) {
     pose_ = Pose{};
     poseAnterior_ = pose_;
-    velocidade_ = kVelocidadeCruzeiro;
+    // A viagem comeca com a energia dividida em partes iguais, que e a nave
+    // como ela sempre foi. Ao contrario da invencibilidade do F4, a reparticao
+    // nao sobrevive a um recomeco: ela e uma decisao desta viagem.
+    energia_ = Reparticao{};
+    alcance_ = alcanceDoSensorDe(energia_.sensor);
+    velocidade_ = velocidadeDeCruzeiroDe(energia_.motor);
     turbo_ = false;
     batida_ = 0.0f;
     casco_ = 1.0f;
@@ -86,8 +91,32 @@ void Flight::encerrar(Context& ctx) {
     vozSirene_ = 0;
 }
 
+int Flight::batidasSuportadasDe(int pontos) {
+    return static_cast<int>(std::ceil(1.0f / danoPorBatidaDe(pontos)));
+}
+
+bool Flight::repartirEnergia(const Reparticao& nova) {
+    const auto dentro = [](int pontos) {
+        return pontos >= kPontoMinimo && pontos <= kPontoMaximo;
+    };
+    if (!dentro(nova.motor) || !dentro(nova.sensor) || !dentro(nova.casco)) {
+        return false;
+    }
+    if (nova.motor + nova.sensor + nova.casco > kPontosDeEnergia) {
+        return false;
+    }
+    energia_ = nova;
+    return true;
+}
+
 float Flight::fatorTurbo() const {
-    return (velocidade_ - kVelocidadeCruzeiro) / (kVelocidadeTurbo - kVelocidadeCruzeiro);
+    const float cruzeiro = velocidadeDeCruzeiroDe(energia_.motor);
+    const float aberto = velocidadeDeTurboDe(energia_.motor);
+    // Grampeado porque a velocidade persegue o alvo em rampa: repartir o motor
+    // no meio de uma aceleracao move os dois extremos debaixo dela, e por um
+    // instante a razao sairia do intervalo. Quem le isto e o ganho do ambiente
+    // e o brilho do escapamento, e nenhum dos dois aceita um numero de fora.
+    return std::clamp((velocidade_ - cruzeiro) / (aberto - cruzeiro), 0.0f, 1.0f);
 }
 
 Flight::Pose Flight::interpolada(float alpha) const {
@@ -116,8 +145,13 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
                        kLimitePitch);
 
         turbo_ = comando.turbo;
-        velocidade_ =
-            aproximar(velocidade_, turbo_ ? kVelocidadeTurbo : kVelocidadeCruzeiro, 3.0f, dt);
+        // O alvo vem da reparticao, e a rampa que ja estava aqui pelo turbo
+        // cuida da mudanca de graca: mexer no motor no conves nao da um
+        // solavanco na nave, ela so passa a puxar para outra velocidade.
+        velocidade_ = aproximar(velocidade_,
+                                turbo_ ? velocidadeDeTurboDe(energia_.motor)
+                                       : velocidadeDeCruzeiroDe(energia_.motor),
+                                3.0f, dt);
     }
     pose_.posicao += rotacaoDe(pose_).frente() * velocidade_ * dt;
 
@@ -145,6 +179,11 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
                           (abafado_ ? kAbafamento : 1.0f);
     ambiente_ = aproximar(ambiente_, alvo, kTaxaAmbiente, dt);
     ctx.audio.ajustarGanho(vozAmbiente_, ambiente_);
+
+    // O sensor abre e fecha pela mesma rampa, pelo mesmo motivo: a nevoa e a
+    // primeira coisa que o jogador ve da reparticao, e ela recuando devagar e
+    // o que mostra a energia chegando ao sistema.
+    alcance_ = aproximar(alcance_, alcanceDoSensorDe(energia_.sensor), kTaxaSensor, dt);
 
     // O alarme do casco critico. A fase anda sempre, com casco inteiro ou nao;
     // quem entra e sai e a intensidade, pela mesma rampa do ambiente -- o
@@ -184,9 +223,13 @@ void Flight::checarColisao(Context& ctx) {
     // mesma densidade sem alocar nada.
     rochas_.reposicionar(atingida, pose_.posicao);
     velocidade_ = kVelocidadeAposBatida;
-    batida_ = 1.0f;
+    // O tranco e proporcional ao estrago, e nao fixo em 1: e assim que a
+    // blindagem se faz sentir sem que ninguem precise ler um numero. Casco
+    // reforcado sacode menos a camera e da um baque mais surdo; casco
+    // sacrificado quase derruba a tela.
+    batida_ = danoPorBatida() / danoPorBatidaDe(kPontoNeutro);
     // O estrago nao se desfaz: o casco so cai, e para no zero.
-    casco_ = std::max(0.0f, casco_ - kDanoPorBatida);
+    casco_ = std::max(0.0f, casco_ - danoPorBatida());
 
     // A ultima rocha soa diferente das outras, e o estouro sai daqui e nao da
     // cena: o casco pode ceder com o jogador no conves, no painel ou na cabine,

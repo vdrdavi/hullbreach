@@ -24,6 +24,12 @@ void retanguloTela(SDL_Renderer* renderer, const SDL_FRect& retangulo, SDL_Color
 void linhaMundo(SDL_Renderer* renderer, const Camera& camera, SDL_FPoint a, SDL_FPoint b,
                 SDL_Color cor);
 
+/// Mistura duas cores canal a canal: t=0 devolve `a`, t=1 devolve `b`. E como
+/// os paineis realcam o que acabou de acontecer -- a zona que acendeu no
+/// acerto, a borda que piscou no erro -- sem uma segunda cor constante para
+/// cada realce.
+SDL_Color misturar(SDL_Color a, SDL_Color b, float t);
+
 /// Brilho radial aditivo em coordenadas de tela: um leque de triangulos que sai
 /// da cor no centro e chega transparente na borda. E o que faz as luzes do 3D
 /// (o escapamento do motor, as faiscas dos destrocos) somarem com o fundo em

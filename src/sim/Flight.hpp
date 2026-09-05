@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <cstddef>
+
 #include "audio/Audio.hpp"
 #include "gfx3d/AsteroidField.hpp"
 #include "gfx3d/Math3D.hpp"
@@ -37,8 +39,83 @@ public:
         float roll{0.0f};
     };
 
-    static constexpr float kVelocidadeCruzeiro = 62.0f;
-    static constexpr float kVelocidadeTurbo = 185.0f;
+    /// A energia da nave e uma so, e se reparte entre tres sistemas: motor,
+    /// sensor e casco. A soma e fixa, entao aqui nao se melhora nada -- so se
+    /// decide de onde tirar, e nao existe reparticao certa, existe reparticao
+    /// adequada ao momento.
+    ///
+    /// O minimo de 1 nao e detalhe: sensor zerado seria voar cego, o que nao e
+    /// risco e sim injustica, e motor zerado seria uma nave parada. O teto de 4
+    /// e o que faz o extremo custar os outros dois -- por o motor no talo
+    /// obriga sensor e casco a ficarem no minimo.
+    static constexpr int kPontoMinimo = 1;
+    static constexpr int kPontoMaximo = 4;
+    static constexpr int kPontoNeutro = 2;
+    static constexpr int kPontosDeEnergia = 3 * kPontoNeutro;
+
+    /// Onde cada ponto de energia esta. O que sobrar para kPontosDeEnergia e a
+    /// reserva: energia parada, que nao alimenta sistema nenhum. Sair do painel
+    /// com um ponto ali e desperdicio, e nao um erro a impedir -- o painel
+    /// avisa, e quem decide e o jogador.
+    struct Reparticao {
+        int motor{kPontoNeutro};
+        int sensor{kPontoNeutro};
+        int casco{kPontoNeutro};
+    };
+
+    /// O que cada ponto compra, indexado pelos pontos do sistema. A posicao 0
+    /// nao e usada: os pontos comecam em kPontoMinimo, e repetir o primeiro
+    /// valor ali evita um "menos um" em cada leitura.
+    ///
+    /// **kPontoNeutro reproduz o jogo numero por numero** -- 62 u/s de
+    /// cruzeiro, 185 de turbo, nevoa comecando a 45 e um oitavo do casco por
+    /// rocha. Nao e coincidencia: e o que mantem valido todo o ajuste que ja
+    /// tinha sido feito antes de a energia se repartir.
+    static constexpr float kCruzeiroPorPonto[kPontoMaximo + 1] = {44.0f, 44.0f, 62.0f, 80.0f,
+                                                                  98.0f};
+    /// O turbo nao acompanha o cruzeiro na mesma proporcao, e o motivo e o passo
+    /// fixo: a 240 u/s a nave anda 4,0 unidades por passo, e a menor colisao
+    /// possivel e 4,2 (raio 2,0 da nave mais 2,2 da menor rocha). Acima disso
+    /// ela comecaria a atravessar pedra sem nunca encostar nela.
+    static constexpr float kTurboPorPonto[kPontoMaximo + 1] = {150.0f, 150.0f, 185.0f, 215.0f,
+                                                               240.0f};
+    /// De quao longe a rocha ja e visivel: e o inicio da nevoa da FlightScene,
+    /// que antes era uma constante dela. O teto cabe dentro do campo de rochas
+    /// (raio 110), entao a pedra continua emergindo do vazio em vez de aparecer
+    /// inteira na borda.
+    static constexpr float kSensorPorPonto[kPontoMaximo + 1] = {30.0f, 30.0f, 45.0f, 60.0f, 75.0f};
+    /// Quanto do casco cada rocha leva embora: de seis batidas ate quinze.
+    static constexpr float kDanoPorPonto[kPontoMaximo + 1] = {0.175f, 0.175f, 0.125f, 0.094f,
+                                                              0.069f};
+
+    static constexpr int pontosValidos(int pontos) {
+        return pontos < kPontoMinimo ? kPontoMinimo : (pontos > kPontoMaximo ? kPontoMaximo
+                                                                             : pontos);
+    }
+    static constexpr float velocidadeDeCruzeiroDe(int pontos) {
+        return kCruzeiroPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+    static constexpr float velocidadeDeTurboDe(int pontos) {
+        return kTurboPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+    static constexpr float alcanceDoSensorDe(int pontos) {
+        return kSensorPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+    static constexpr float danoPorBatidaDe(int pontos) {
+        return kDanoPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+
+    /// O numero que resume a troca inteira: os segundos entre a rocha sair da
+    /// nevoa e alcancar a nave, no cruzeiro. Motor e sensor nao sao dois
+    /// ajustes independentes -- eles se multiplicam neste, e e ele, e nao a
+    /// tabela, que o jogador sente. Com (2,2,2) da 0,73 s; com o motor no talo
+    /// e o sensor no minimo, 0,31 s.
+    static constexpr float segundosDeAvisoDe(const Reparticao& reparticao) {
+        return alcanceDoSensorDe(reparticao.sensor) / velocidadeDeCruzeiroDe(reparticao.motor);
+    }
+
+    /// Quantas rochas o casco inteiro aguenta com estes pontos de blindagem.
+    static int batidasSuportadasDe(int pontos);
 
     /// Ate onde a bancada do conves leva o casco de volta. O reparo de campo
     /// nao deixa a nave nova: acima disto o estrago e de estaleiro, e a viagem
@@ -70,6 +147,25 @@ public:
     /// Ha o que a bancada possa fazer? Uma nave perdida nao se conserta, e um
     /// casco acima do teto ja esta no melhor que o reparo de campo alcanca.
     bool reparavel() const { return !destruida() && casco_ < kCascoReparado; }
+
+    /// Como a energia esta repartida agora.
+    const Reparticao& energia() const { return energia_; }
+    /// Os pontos que sobraram fora dos tres sistemas.
+    int reserva() const {
+        return kPontosDeEnergia - energia_.motor - energia_.sensor - energia_.casco;
+    }
+    /// Reparte a energia, recusando o que quebraria o invariante (cada sistema
+    /// entre o minimo e o maximo, soma dentro do total). A recusa fica aqui, e
+    /// nao no painel, pelo mesmo motivo do teto do reparo: e regra da nave, e a
+    /// proxima tela que mexer na energia nao pode precisar lembrar dela.
+    bool repartirEnergia(const Reparticao& nova);
+
+    /// O alcance do sensor como ele esta **agora**: o valor da reparticao
+    /// perseguido em rampa, e nao o da tabela. Repartir no conves nao pode
+    /// fazer a nevoa saltar na cara de quem estiver na cabine.
+    float alcanceDoSensor() const { return alcance_; }
+    /// Quanto a proxima rocha vai custar de casco.
+    float danoPorBatida() const { return danoPorBatidaDe(energia_.casco); }
 
 #ifdef JOGO_DEBUG
     /// A trapaca de quem desenvolve, que o F4 liga e desliga (so na build de
@@ -128,7 +224,11 @@ private:
     Pose poseAnterior_;
     AsteroidField rochas_;
 
-    float velocidade_{kVelocidadeCruzeiro};
+    Reparticao energia_;
+    /// O alcance do sensor perseguindo o da reparticao; veja alcanceDoSensor().
+    float alcance_{alcanceDoSensorDe(kPontoNeutro)};
+
+    float velocidade_{velocidadeDeCruzeiroDe(kPontoNeutro)};
     float batida_{0.0f};
     float casco_{1.0f};
     bool turbo_{false};

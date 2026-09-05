@@ -1,9 +1,23 @@
 #include "gfx/Draw.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
 namespace jogo::draw {
+namespace {
+
+Uint8 misturarCanal(Uint8 a, Uint8 b, float t) {
+    const float valor = static_cast<float>(a) + (static_cast<float>(b) - static_cast<float>(a)) * t;
+    return static_cast<Uint8>(std::clamp(valor, 0.0f, 255.0f));
+}
+
+}  // namespace
+
+SDL_Color misturar(SDL_Color a, SDL_Color b, float t) {
+    return SDL_Color{misturarCanal(a.r, b.r, t), misturarCanal(a.g, b.g, t),
+                     misturarCanal(a.b, b.b, t), misturarCanal(a.a, b.a, t)};
+}
 namespace {
 
 /// Recorte efetivo: se o sprite nao definir um, usa a textura inteira.

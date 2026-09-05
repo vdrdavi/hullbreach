@@ -25,16 +25,6 @@ constexpr SDL_Color kCorAgulha{240, 226, 180, 255};
 constexpr SDL_Color kCorFaisca{255, 248, 214, 255};
 constexpr SDL_Color kCorPerda{235, 110, 105, 255};
 
-Uint8 misturarCanal(Uint8 a, Uint8 b, float t) {
-    const float valor = static_cast<float>(a) + (static_cast<float>(b) - static_cast<float>(a)) * t;
-    return static_cast<Uint8>(std::clamp(valor, 0.0f, 255.0f));
-}
-
-SDL_Color misturar(SDL_Color a, SDL_Color b, float t) {
-    return SDL_Color{misturarCanal(a.r, b.r, t), misturarCanal(a.g, b.g, t),
-                     misturarCanal(a.b, b.b, t), misturarCanal(a.a, b.a, t)};
-}
-
 }  // namespace
 
 RepairScene::RepairScene(Flight& voo)
@@ -211,7 +201,7 @@ void RepairScene::desenhar(Context& ctx, float alpha) {
         const SDL_FRect zona{trilho.x + (zonaCentro_ - zonaMeia_) * trilho.w, trilho.y,
                              zonaMeia_ * 2.0f * trilho.w, trilho.h};
         draw::retanguloTela(ctx.renderer, zona,
-                            misturar(kCorZona, kCorFaisca, realceAcerto_));
+                            draw::misturar(kCorZona, kCorFaisca, realceAcerto_));
 
         // A agulha anda no passo fixo e e interpolada aqui: sem isto ela
         // avancaria a 60 Hz numa tela que desenha a 240.
@@ -225,7 +215,8 @@ void RepairScene::desenhar(Context& ctx, float alpha) {
                             apagada ? kCorApagada : (trava_ > 0.0f ? kCorPerda : kCorAgulha));
     }
 
-    draw::retanguloTela(ctx.renderer, trilho, misturar(kCorBorda, kCorPerda, realceErro_), false);
+    draw::retanguloTela(ctx.renderer, trilho, draw::misturar(kCorBorda, kCorPerda, realceErro_),
+                        false);
     y += trilho.h + linha * 1.4f;
 
     const char* estado = nullptr;

@@ -303,9 +303,9 @@ entrada e não mexe na pilha; decisões esperam o painel sair da frente. E **nã
 implementar `acompanhar` é uma resposta**: é como a `PauseScene` diz que pausa
 mesmo, e o menu, que ali não há mundo nenhum para andar.
 
-Assim, as quatro cenas que dão o passo do voo (`InteriorScene`, `FlightScene`,
-`StatusScene`, `RepairScene`) o dão também no `acompanhar` — a `StatusScene` e a
-`RepairScene` chegam a definir o `atualizar` como `acompanhar` mais as decisões,
+Assim, as cinco cenas que dão o passo do voo (`InteriorScene`, `FlightScene`,
+`StatusScene`, `RepairScene`, `PowerScene`) o dão também no `acompanhar` — as
+três últimas chegam a definir o `atualizar` como `acompanhar` mais as decisões,
 que é exatamente o que ele é.
 Quem chama de fora é `SceneStack::acompanharAbaixoDoTopo`, com a mesma regra do
 update: de cima para baixo, parando na primeira cena que bloqueia. Quem estiver
@@ -667,15 +667,21 @@ Editar o cenário não exige recompilar, e cabe mais de um ambiente no jogo. O
 marcador aceita fração porque o painel tem 3 tiles de largura e o convés tem 20:
 `8.5` é o que centraliza o console de verdade.
 
-Hoje o arquivo traz **dois** marcadores, e eles são os dois móveis do convés: o
-`console` de pilotagem, encostado na parede de cima, e a `bancada` de reparo, no
-canto oposto, encostada na parede de baixo. Os dois são sólidos (a colisão de
-`moverComColisao` recusa a caixa do jogador que os sobrepõe), os dois têm uma
-**zona de interação** logo à frente e os dois respondem a `E` — o que muda é de
-que lado se chega. À bancada se chega por cima, então a zona dela fica *acima*
-do móvel, e não abaixo como a do console. Que a bancada fique longe do painel é
-escolha de desenho de jogo, não acaso: atravessar o convés para soldar é parte
-do preço do reparo (seção 13).
+Hoje o arquivo traz **três** marcadores, e eles são os três móveis do convés: o
+`console` de pilotagem, encostado na parede de cima; a `bancada` de reparo, no
+canto inferior esquerdo; e o repartidor de `energia`, no canto inferior direito.
+Os três são sólidos (a colisão de `moverComColisao` recusa a caixa do jogador que
+os sobrepõe), os três têm uma **zona de interação** logo à frente e os três
+respondem a `E` — o que muda é de que lado se chega. À bancada e ao repartidor se
+chega por cima, então a zona deles fica *acima* do móvel, e não abaixo como a do
+console.
+
+Que os três fiquem longe uns dos outros é escolha de desenho de jogo, não acaso.
+Eles formam um **triângulo** no convés, e a distância é o que os torna decisões:
+chegar a qualquer um custa largar os controles e atravessar a nave, que não para
+de voar enquanto se anda. Atravessar o convés para soldar é parte do preço do
+reparo, e atravessá-lo para repartir a energia é o que impede o repartidor de
+virar um menu que se otimiza a cada situação (seção 13).
 
 **O que ficou de fora do arquivo, de propósito**: quais nomes de tile existem,
 qual é o índice de cada um no atlas e quais são sólidos. Isso vive na tabela
@@ -954,10 +960,11 @@ O que acontece em um passo:
   que é o que faz a nave *inclinar na curva* como um caça em vez de girar como
   uma torre. A **arfagem** (*pitch*) é grampeada em ±1,15 rad, para a nave não
   dar cambalhota.
-- **Velocidade.** Persegue 62 u/s no cruzeiro ou 185 u/s no turbo — não pula
-  entre os dois. `fatorTurbo()` devolve onde ela está entre os dois valores, de 0
-  a 1, e é a medida de esforço do motor que a HUD, o brilho do escapamento e o
-  volume do ambiente usam.
+- **Velocidade.** Persegue o cruzeiro ou o turbo — não pula entre os dois. Os
+  dois alvos saem dos pontos de energia do motor (adiante); com a energia
+  repartida em partes iguais são os 62 e os 185 u/s de sempre. `fatorTurbo()`
+  devolve onde ela está entre os dois valores, de 0 a 1, e é a medida de esforço
+  do motor que a HUD, o brilho do escapamento e o volume do ambiente usam.
 - **Posição.** `posicao += frente() * velocidade * dt`. Tudo o mais é
   consequência da pose.
 - **Campo e colisão.** As rochas tombam, o cubo é recentrado na nave e testa-se a
@@ -973,10 +980,71 @@ Na batida, a nave quase para (18 u/s), a rocha é reposicionada, um som toca e
 `InteriorScene`, a câmera treme na `FlightScene`, e a `StatusScene` pisca a
 palavra do mostrador.
 
-A batida também **cobra o casco**: `casco_` começa em 1, cai 0,125 por rocha e
-para no zero — oito batidas do casco inteiro ao nada. É um valor da *viagem*, e
-por isso mora aqui e não na tela que o mostra: a nave se estraga batendo com o
-piloto no convés tanto quanto na cabine, e o mostrador é só quem lê `casco()`.
+A batida também **cobra o casco**: `casco_` começa em 1, cai o que a blindagem
+deixar (0,125 com a energia em partes iguais — oito batidas do casco inteiro ao
+nada) e para no zero. É um valor da *viagem*, e por isso mora aqui e não na tela
+que o mostra: a nave se estraga batendo com o piloto no convés tanto quanto na
+cabine, e o mostrador é só quem lê `casco()`.
+
+O pico de `batida_` é **proporcional ao estrago**, e não fixo em 1. É assim que a
+blindagem se faz sentir sem que ninguém precise ler um número: casco reforçado
+sacode menos a câmera e dá um baque mais surdo, casco sacrificado quase derruba a
+tela.
+
+### A energia se reparte
+
+A nave tem uma fonte de energia só, e ela se divide entre **três sistemas**:
+motor, sensor e casco. A soma é fixa — seis pontos, cada sistema entre 1 e 4 —,
+então aqui não se melhora nada: só se decide **de onde tirar**. Quem escolhe é o
+repartidor do convés (`PowerScene`, seção 13); quem guarda a regra é o `Flight`,
+porque é regra da nave.
+
+| Pontos | Motor (cruzeiro) | Sensor (alcance) | Casco (dano por rocha) |
+|---|---|---|---|
+| 1 | 44 u/s | 30 u | 0,175 — 6 batidas |
+| **2** | **62 u/s** | **45 u** | **0,125 — 8 batidas** |
+| 3 | 80 u/s | 60 u | 0,094 — 11 batidas |
+| 4 | 98 u/s | 75 u | 0,069 — 15 batidas |
+
+**A linha do meio é o jogo como ele sempre foi**, número por número, e isso não é
+coincidência: a viagem começa em (2, 2, 2), e é o que mantém válido todo o ajuste
+que já tinha sido feito antes de a energia se repartir.
+
+O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
+sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o
+extremo custar os outros dois — pôr o motor no talo obriga sensor e casco a
+ficarem no mínimo. O que sobrar dos seis pontos fica na **reserva**: energia
+parada, que não alimenta sistema nenhum. Sair do painel com um ponto ali é
+desperdício, e não um erro a impedir.
+
+**Motor e sensor não são dois ajustes independentes** — eles se multiplicam em um
+terceiro número, e é esse que o jogador sente:
+
+```
+segundos de aviso = alcance do sensor ÷ velocidade de cruzeiro
+```
+
+É o tempo entre a rocha sair da névoa e alcançar a nave. Com (2, 2, 2) dá 0,73 s;
+com o motor no talo e o sensor no mínimo, 0,31 s — menos da metade, e ainda com o
+casco no mínimo, porque não sobrou ponto. O painel mostra esse número grande e
+sozinho: as três fileiras são a conta, e ele é o resultado.
+
+Duas coisas saem de graça da arquitetura que já existia:
+
+- **A mudança não dá solavanco.** `velocidade_` já perseguia o alvo com
+  suavização exponencial por causa do turbo; trocar os pontos do motor move o
+  alvo debaixo dessa rampa, e a nave só passa a puxar para outra velocidade. O
+  alcance do sensor ganhou a mesma rampa pelo mesmo motivo — a névoa abrindo ou
+  fechando devagar é a primeira coisa que se vê da repartição.
+- **`fatorTurbo()` passou a ser grampeado em 0..1.** Repartir o motor no meio de
+  uma aceleração move os dois extremos debaixo da razão, e por um instante ela
+  sairia do intervalo. Quem a lê é o ganho do ambiente e o brilho do escapamento,
+  e nenhum dos dois aceita um número de fora.
+
+O teto do turbo **não** acompanha o do cruzeiro na mesma proporção, e o motivo é
+o passo fixo: a 240 u/s a nave anda 4,0 unidades por passo, e a menor colisão
+possível é 4,2 (raio 2,0 da nave mais 2,2 da menor rocha). Acima disso ela
+começaria a atravessar pedra sem nunca encostar nela.
 
 ### O casco volta, até certo ponto
 
@@ -1095,6 +1163,7 @@ if (voo_.destruida()) { ... return; }          // entrega a vista externa
 if (acaoPressionada(Pausar)) { ... return; }   // empilha a pausa
 if (pertoDoConsole() && acaoPressionada(Diagnostico)) { ... return; } // empilha o casco
 if (pertoDaBancada() && acaoPressionada(Interagir)) { ... return; }   // empilha o reparo
+if (pertoDaEnergia() && acaoPressionada(Interagir)) { ... return; }   // empilha a energia
 if (pertoDoConsole() && acaoPressionada(Interagir)) { ... return; }   // fecha a cortina
 moverComColisao(...);                          // só aqui o jogador anda
 camera_.seguir(posicao_, dt, 7.0f);
@@ -1142,11 +1211,19 @@ capricho: o `E` **fecha a cortina** e troca de mundo (a cabine cobre a tela
 inteira); o `Q` empilha um painel que é um *overlay* sobre o próprio convés, que
 continua visível atrás — não há para onde transicionar, então não há cortina.
 
-A **bancada** é a segunda parada do convés e usa o mesmo `E`, sem conflito, porque
-as duas zonas de interação não se cruzam: perto do painel o `E` pilota, perto da
-bancada ele solda. Ela segue o caminho do `Q` — *overlay* sem cortina, porque o
-piloto não sai do convés — e o convite dela sai da mesma `desenharConvite`, que
-existe justamente para as duas bocas do convés não parecerem coisas diferentes.
+A **bancada** e o **repartidor de energia** são a segunda e a terceira parada do
+convés, e usam o mesmo `E`, sem conflito, porque as três zonas de interação não
+se cruzam: perto do painel o `E` pilota, perto da bancada ele solda, perto do
+repartidor ele abre a energia. Os dois seguem o caminho do `Q` — *overlay* sem
+cortina, porque o piloto não sai do convés — e os convites dos três saem da mesma
+`desenharConvite`, que existe justamente para as três bocas do convés não
+parecerem coisas diferentes. Por isso também a barra de dicas diz `E: usar`, e
+não `E: painel`: qual móvel a tecla abre é a tarja flutuante que diz.
+
+A `desenharConvite` **grampeia a tarja dentro da tela**. Ela é ancorada no móvel,
+mas um móvel encostado na parede lateral fica a menos de meia tarja da borda, e
+ali a câmera já está no limite do mundo e não tem para onde correr — sem o
+grampo, o convite do repartidor saía pela direita.
 
 ### FlightScene
 
@@ -1156,6 +1233,12 @@ sobrevive à cabine.
 
 O que ela acrescenta é a apresentação: a câmera de terceira pessoa, o campo de
 estrelas, a névoa, a HUD, o brilho do escapamento e o clarão da batida.
+
+A **névoa é regulada a cada quadro**, e não uma vez no `aoEntrar`: o início dela é
+o alcance do sensor da nave (seção 12), que muda de tamanho quando a energia se
+reparte no convés. O fim continua sendo a borda do campo de rochas — o que a
+repartição move é de quão longe a pedra já é visível, não até onde o campo
+existe.
 
 A câmera persegue um ponto atrás e acima da nave (`{0, 1.4, 5}` no espaço dela) e
 **olha 14 unidades à frente** da nave, não para a nave: mirar adiante mantém o
@@ -1276,6 +1359,39 @@ Como a `StatusScene`, ela não bloqueia o render — o convés fica visível atr
 **inclusive a luz vermelha do casco crítico**, que é metade da graça de estar ali
 — e, se o casco ceder durante a solda, ela **se troca** pela `FlightScene` pelo
 mesmo motivo aritmético descrito acima.
+
+### PowerScene
+
+O repartidor de energia do convés, aberto com `E` no canto oposto ao da bancada.
+Três fileiras de quatro lugares — motor, sensor, casco —, as setas laterais
+escolhem a fileira e as verticais movem um ponto entre ela e a **reserva**. Não
+há atalho que tire de um sistema e ponha no outro de uma vez: a energia passa
+pela reserva à vista, e é isso que mostra que ela é conservada em vez de aparecer.
+
+As regras de quanto cada ponto compra ficam no `Flight` (seção 12), e a recusa de
+uma repartição inválida também: a cena pede `repartirEnergia` e a nave aceita ou
+não. Um pedido recusado — um quinto ponto num sistema, ou um ponto que não existe
+na reserva — não muda nada e faz o painel piscar em vermelho, e é **um caminho
+de recusa só**, porque as duas condições são a mesma pergunta feita à nave.
+
+O que faz disso uma decisão, e não um menu de dificuldade, é a **geometria do
+convés**. Se desse para repartir a qualquer momento e de graça, o jogador poria
+sensor no talo ao entrar no campo denso e motor no talo quando o caminho
+estivesse limpo, e o sistema viraria uma tecla de trapaça com passos extras. A
+energia só se reparte aqui, e chegar aqui custa largar os controles e atravessar
+a nave — que, como sempre, segue voando sozinha. É o mesmo preço da bancada, pela
+mesma razão.
+
+Como a `StatusScene` e a `RepairScene`, ela não bloqueia o render, passa a ser
+quem chama `Flight::atualizar` com `Comando{}` enquanto está no topo, e **se
+troca** pela `FlightScene` se o casco ceder — o mesmo motivo aritmético das
+outras. E, como na bancada, o `acompanhar` **não mexe nos pontos**: eles não
+perseguem a simulação, são a escolha do jogador, e um painel aberto por cima não
+reparte energia por conta própria (seção 5).
+
+A leitura que fica na tela não é a tabela, é o resultado dela: **`AVISO 0,73 s`**,
+grande e sozinho, com a cor mudando conforme o número encolhe. As três fileiras
+acima são a conta.
 
 ### PauseScene
 
@@ -1540,8 +1656,8 @@ de um script Python (com Pillow) que qualquer pessoa pode rodar e ajustar.
 python tools/gen_assets.py
 ```
 
-Ele gera as texturas (tiles do interior, personagem, console, bancada), o atlas
-da fonte e os WAVs. Dois deles merecem explicação.
+Ele gera as texturas (tiles do interior, personagem, console, bancada,
+repartidor de energia), o atlas da fonte e os WAVs. Dois deles merecem explicação.
 
 **O ambiente (`espaco.wav`) é ruído marrom.** *Ruído branco* tem energia igual em
 todas as frequências e soa como chiado de televisão; o **ruído marrom** cai a
@@ -1727,9 +1843,12 @@ mudança vai no corpo da mensagem de commit.
 | **Reamostrador** | Conversor de taxa de amostragem (ex.: 22050 → 44100 Hz). |
 | **Recorte no plano próximo** | Cortar os triângulos contra um plano à frente da câmera antes de projetar. |
 | **Regime permanente** | O estado de equilíbrio para o qual um sistema converge; aqui, o atraso `v/k` da câmera. |
+| **Repartição de energia** | Os seis pontos que a nave divide entre motor, sensor e casco; a soma é fixa, então melhorar um é tirar de outro. |
+| **Reserva (energia)** | Os pontos da repartição que não foram postos em sistema nenhum; energia parada, que não faz nada. |
 | **Resolução lógica** | A resolução fixa em que o jogo desenha (640×360), escalada depois para a janela. |
 | **Ruído branco / marrom** | Energia igual em todas as frequências / caindo a −6 dB por oitava. |
 | **Scancode** | Código físico da tecla, independente do layout do teclado. |
+| **Segundos de aviso** | O tempo entre a rocha sair da névoa e alcançar a nave: alcance do sensor dividido pela velocidade de cruzeiro. |
 | **Shader** | Programa que roda na placa de vídeo. Este projeto não usa nenhum. |
 | **Smoothstep** | Curva `t²(3−2t)`: vai de 0 a 1 saindo e chegando parada. |
 | **Sombreamento flat** | Uma cor por face, sem interpolar entre vértices. |

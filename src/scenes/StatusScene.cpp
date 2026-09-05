@@ -153,8 +153,14 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
                                    piscando ? kCorApagada : faixa.cor, 1.0f);
     y += linha * 1.6f;
 
-    ctx.fonte.desenharCentralizado(ctx.renderer, "cada rocha custa um pedaco do casco", meio, y,
-                                   kCorApagada, 1.0f);
+    // O pedaco que cada rocha leva deixou de ser fixo -- ele sai da blindagem, e
+    // quem a reparte e o painel de energia do conves. Dizer "um pedaco" aqui
+    // esconderia justamente o que o jogador acabou de escolher.
+    char custo[64];
+    std::snprintf(custo, sizeof(custo), "cada rocha custa %d%% do casco -- aguenta %d",
+                  static_cast<int>(voo_.danoPorBatida() * 100.0f + 0.5f),
+                  Flight::batidasSuportadasDe(voo_.energia().casco));
+    ctx.fonte.desenharCentralizado(ctx.renderer, custo, meio, y, kCorApagada, 1.0f);
 
     const char* dica = ctx.input.temGamepad() ? "B ou Y: voltar ao conves"
                                               : "Esc ou Q: voltar ao conves";

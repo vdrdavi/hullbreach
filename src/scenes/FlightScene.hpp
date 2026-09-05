@@ -42,8 +42,6 @@ private:
     /// Quanto o campo de visao nasce fechado: a cabine abre do painel para o
     /// espaco, entao a vista alarga em vez de aparecer pronta.
     static constexpr float kAberturaFov = 12.0f;
-    /// A nevoa comeca antes da borda do campo, para as rochas emergirem do vazio.
-    static constexpr float kNevoaInicio = 45.0f;
     static constexpr float kAmplitudeTremor = 0.55f;  // unidades de mundo
     /// Com que taxa a camera persegue a nave; o atraso e o que da peso as manobras.
     static constexpr float kPerseguicaoCamera = 9.0f;  // 1/s

@@ -173,6 +173,15 @@ void desenharNave(Coluna& coluna, Flight* voo) {
     coluna.campo("veloc.", texto("%.1f u/s  (t %.2f)", static_cast<double>(voo->velocidade()),
                                  static_cast<double>(voo->fatorTurbo())));
     coluna.campo("batida", texto("%.2f", static_cast<double>(voo->batida())));
+    // A reparticao e o segundo lugar em que se olha quando a nave parece outra:
+    // motor, sensor, casco e o que sobrou na reserva, mais os segundos de aviso
+    // que os dois primeiros produzem juntos.
+    const Flight::Reparticao& energia = voo->energia();
+    coluna.campo("energia", texto("M%d S%d C%d  (reserva %d)", energia.motor, energia.sensor,
+                                  energia.casco, voo->reserva()));
+    coluna.campo("aviso", texto("%.2f s  (sensor %.0f u)",
+                                static_cast<double>(Flight::segundosDeAvisoDe(energia)),
+                                static_cast<double>(voo->alcanceDoSensor())));
 
     const Flight::Pose& pose = voo->pose();
     coluna.campo("posicao", texto("%.0f %.0f %.0f", static_cast<double>(pose.posicao.x),

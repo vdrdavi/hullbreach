@@ -43,6 +43,7 @@ add_executable(jogo
     src/scenes/InteriorScene.cpp
     src/scenes/FlightScene.cpp
     src/scenes/PauseScene.cpp
+    src/scenes/PowerScene.cpp
     src/scenes/StatusScene.cpp
     src/scenes/RepairScene.cpp
     src/scenes/GameOverScene.cpp
