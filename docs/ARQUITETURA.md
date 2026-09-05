@@ -117,12 +117,13 @@ tiles, aceita fração) e `mapa`, que abre a grade — e o próprio arquivo expl
 formato no cabeçalho. Um novo ambiente é um arquivo novo mais um
 `carregar("maps/<nome>.mapa")`.
 
-Os marcadores são o que tira as posições dos móveis do código: `console`,
-`bancada` e `energia` dão o canto superior esquerdo de cada um, e a
-`InteriorScene` monta a partir daí o retângulo sólido e a zona de interação.
-Mover a bancada para o outro canto do convés é editar uma linha do mapa — e a
-distância entre os três é desenho de jogo, não acaso: chegar a qualquer um deles
-custa atravessar uma nave que não para de voar.
+Os marcadores são o que tira as posições dos móveis do código: `console` e
+`bancada` dão o canto superior esquerdo de cada um, e a `InteriorScene` monta a
+partir daí o retângulo sólido e a zona de interação. Mover a bancada para o outro
+canto do convés é editar uma linha do mapa — e a distância entre os dois é
+desenho de jogo, não acaso: chegar à bancada custa atravessar uma nave que não
+para de voar. O console concentra três comandos (`E`, `Q` e `R`) em um móvel só,
+por ser o monitor central da nave.
 
 O que **não** está no arquivo: os nomes de tile válidos, o índice de cada um no
 atlas e quais são sólidos. Isso vive na tabela `kDefinicoes` no topo de

@@ -22,7 +22,6 @@ constexpr SDL_Color kCorApagada{92, 110, 130, 255};
 constexpr SDL_Color kCorTrilho{14, 26, 40, 255};
 constexpr SDL_Color kCorPerda{235, 110, 105, 255};
 constexpr SDL_Color kCorAtencao{245, 190, 110, 255};
-constexpr SDL_Color kCorFolga{120, 220, 150, 255};
 
 /// Uma cor por sistema, e as mesmas em toda a tela: o ponto que sai do motor e
 /// entra no sensor muda de cor no caminho, e e assim que se ve que ele andou.
@@ -125,8 +124,11 @@ void PowerScene::atualizar(Context& ctx, float dt) {
         return;
     }
 
+    // A mesma tecla que abriu fecha, como o Q do diagnostico. Interagir nao
+    // entra aqui: ele e do painel, e um E solto fecharia esta tela para abrir a
+    // cabine no mesmo quadro.
     if (ctx.input.acaoPressionada(Acao::Voltar) || ctx.input.acaoPressionada(Acao::Pausar) ||
-        ctx.input.acaoPressionada(Acao::Interagir)) {
+        ctx.input.acaoPressionada(Acao::Energia)) {
         ctx.audio.tocar(somVoltar_);
         ctx.cenas.desempilhar();
         return;
@@ -179,8 +181,7 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     const float linha = ctx.fonte.alturaLinha(1.0f);
     const float margem = 12.0f;
     const float fileira = kAlturaPonto + 10.0f;
-    const float alturaConteudo = linha * 2.2f + fileira * 3.0f + 8.0f + fileira + 8.0f +
-                                 ctx.fonte.alturaLinha(2.0f) + 4.0f + linha;
+    const float alturaConteudo = linha * 2.2f + fileira * 3.0f + 8.0f + fileira;
     const SDL_FRect vidro{meio - 190.0f, 62.0f, 380.0f, alturaConteudo + margem * 2.0f};
     draw::retanguloTela(ctx.renderer, vidro, kCorVidro);
     draw::retanguloTela(ctx.renderer, vidro, draw::misturar(kCorBorda, kCorPerda, realceRecusa_),
@@ -255,34 +256,13 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     const int reserva = voo_.reserva();
     desenharFileira(-1, "RESERVA", kCorReserva, reserva, Flight::kPontosDeEnergia - kSistemas,
                     reserva > 0 ? "ENERGIA PARADA" : nullptr, kCorAtencao, y);
-    y += fileira + 8.0f;
-
-    // O numero que resume a troca. Fica grande e sozinho porque e o unico que o
-    // jogador precisa levar daqui: as tres fileiras acima sao a conta, e esta
-    // linha e o resultado dela.
-    const float aviso = Flight::segundosDeAvisoDe(energia);
-    const int centesimos = static_cast<int>(aviso * 100.0f + 0.5f);
-    SDL_Color corAviso = kCorTexto;
-    if (aviso >= 0.85f) {
-        corAviso = kCorFolga;
-    } else if (aviso < 0.42f) {
-        corAviso = kCorPerda;
-    } else if (aviso < 0.60f) {
-        corAviso = kCorAtencao;
-    }
-    char leitura[32];
-    std::snprintf(leitura, sizeof(leitura), "AVISO %d,%02d s", centesimos / 100, centesimos % 100);
-    ctx.fonte.desenharCentralizado(ctx.renderer, leitura, meio, y, corAviso, 2.0f);
-    y += ctx.fonte.alturaLinha(2.0f) + 4.0f;
-
-    ctx.fonte.desenharCentralizado(ctx.renderer, "o tempo entre a rocha surgir e o casco", meio, y,
-                                   kCorApagada, 1.0f);
 
     // A dica nomeia os dois eixos separados: qual seta faz o que nao e obvio
-    // antes de experimentar, e experimentar aqui custa uma travessia do conves.
+    // antes de experimentar. Fechar pelo mesmo R que abriu segue o Q do
+    // diagnostico -- a boca do painel que abriu a tela e a que a fecha.
     const char* dica = ctx.input.temGamepad()
-                           ? "direcional: sistema e energia   B ou X: voltar ao conves"
-                           : "cima/baixo: sistema   esq/dir: energia   Esc: voltar";
+                           ? "direcional: sistema e energia   B ou RB: voltar ao conves"
+                           : "cima/baixo: sistema   esq/dir: energia   Esc ou R: voltar";
     ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, vidro.y + vidro.h + 12.0f, kCorTexto,
                                    1.0f);
 }

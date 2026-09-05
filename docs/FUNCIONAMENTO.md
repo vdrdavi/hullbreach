@@ -371,9 +371,11 @@ Cada ação aceita até três teclas e dois botões; as posições não usadas f
 removido sem abrir buraco na tabela. **Acrescentar um comando ao jogo é
 acrescentar um valor ao enum, um nome na tabela `kNomes` e uma linha em
 `kPadrao`.** Foi só isso que custou o `Q` do diagnóstico do casco
-(`Acao::Diagnostico`, seção 13) — nenhuma cena precisou saber que tecla é essa.
-Como o nome da ação é a chave no arquivo de preferências, a ação nova entra
-**no fim do enum**: os vínculos já gravados continuam valendo.
+(`Acao::Diagnostico`) e o `R` da repartição de energia (`Acao::Energia`), as duas
+da seção 13 — nenhuma cena precisou saber que teclas são essas. Como o nome da
+ação é a chave no arquivo de preferências, a ação nova entra **no fim do enum**:
+os vínculos já gravados continuam valendo, e quem não cita a ação nova herda o
+vínculo de fábrica dela.
 
 Essa tabela é o **ponto de partida**, não a palavra final: o mapa em vigor é
 estado do `Input` (`mapa_`), e é justamente por isso que a configuração pode
@@ -667,21 +669,18 @@ Editar o cenário não exige recompilar, e cabe mais de um ambiente no jogo. O
 marcador aceita fração porque o painel tem 3 tiles de largura e o convés tem 20:
 `8.5` é o que centraliza o console de verdade.
 
-Hoje o arquivo traz **três** marcadores, e eles são os três móveis do convés: o
-`console` de pilotagem, encostado na parede de cima; a `bancada` de reparo, no
-canto inferior esquerdo; e o repartidor de `energia`, no canto inferior direito.
-Os três são sólidos (a colisão de `moverComColisao` recusa a caixa do jogador que
-os sobrepõe), os três têm uma **zona de interação** logo à frente e os três
-respondem a `E` — o que muda é de que lado se chega. À bancada e ao repartidor se
-chega por cima, então a zona deles fica *acima* do móvel, e não abaixo como a do
-console.
+Hoje o arquivo traz **dois** marcadores, e eles são os dois móveis do convés: o
+`console` de pilotagem, encostado na parede de cima, e a `bancada` de reparo, no
+canto oposto, encostada na parede de baixo. Os dois são sólidos (a colisão de
+`moverComColisao` recusa a caixa do jogador que os sobrepõe) e os dois têm uma
+**zona de interação** logo à frente — o que muda é de que lado se chega. À
+bancada se chega por cima, então a zona dela fica *acima* do móvel, e não abaixo
+como a do console.
 
-Que os três fiquem longe uns dos outros é escolha de desenho de jogo, não acaso.
-Eles formam um **triângulo** no convés, e a distância é o que os torna decisões:
-chegar a qualquer um custa largar os controles e atravessar a nave, que não para
-de voar enquanto se anda. Atravessar o convés para soldar é parte do preço do
-reparo, e atravessá-lo para repartir a energia é o que impede o repartidor de
-virar um menu que se otimiza a cada situação (seção 13).
+Que a bancada fique longe do painel é escolha de desenho de jogo, não acaso:
+atravessar o convés para soldar é parte do preço do reparo (seção 13). O painel,
+por sua vez, é o **monitor central da nave** e concentra três comandos em um
+móvel só — `E` assume os controles, `Q` lê o casco e `R` reparte a energia.
 
 **O que ficou de fora do arquivo, de propósito**: quais nomes de tile existem,
 qual é o índice de cada um no atlas e quais são sólidos. Isso vive na tabela
@@ -996,8 +995,8 @@ tela.
 A nave tem uma fonte de energia só, e ela se divide entre **três sistemas**:
 motor, sensor e casco. A soma é fixa — seis pontos, cada sistema entre 1 e 4 —,
 então aqui não se melhora nada: só se decide **de onde tirar**. Quem escolhe é o
-repartidor do convés (`PowerScene`, seção 13); quem guarda a regra é o `Flight`,
-porque é regra da nave.
+painel de pilotagem, no `R` (`PowerScene`, seção 13); quem guarda a regra é o
+`Flight`, porque é regra da nave.
 
 | Pontos | Motor (cruzeiro) | Sensor (alcance) | Casco (dano por rocha) |
 |---|---|---|---|
@@ -1043,8 +1042,12 @@ possíveis o espalham de **0,20 s a 3,17 s**, um intervalo de dezesseis vezes, c
 (2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três sistemas de uma
 vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s enxergando 20 unidades à
 frente e cede em quatro rochas; `M1 S4 C1` enxerga 95 unidades com 3,17 s de
-folga, mas se arrasta a 30 u/s e cede nas mesmas quatro. O painel mostra esse
-número grande e sozinho: as três fileiras são a conta, e ele é o resultado.
+folga, mas se arrasta a 30 u/s e cede nas mesmas quatro.
+
+O painel **não mostra esse número** — ele mostra o que cada sistema comprou, e a
+conta de quanto tempo isso dá para reagir fica com o jogador. Quem quiser vê-lo
+medido tem a tela do F3, que é instrumento de quem desenvolve e não parte do
+jogo.
 
 Duas coisas saem de graça da arquitetura que já existia:
 
@@ -1180,7 +1183,7 @@ if (voo_.destruida()) { ... return; }          // entrega a vista externa
 if (acaoPressionada(Pausar)) { ... return; }   // empilha a pausa
 if (pertoDoConsole() && acaoPressionada(Diagnostico)) { ... return; } // empilha o casco
 if (pertoDaBancada() && acaoPressionada(Interagir)) { ... return; }   // empilha o reparo
-if (pertoDaEnergia() && acaoPressionada(Interagir)) { ... return; }   // empilha a energia
+if (pertoDoConsole() && acaoPressionada(Energia)) { ... return; }     // empilha a energia
 if (pertoDoConsole() && acaoPressionada(Interagir)) { ... return; }   // fecha a cortina
 moverComColisao(...);                          // só aqui o jogador anda
 camera_.seguir(posicao_, dt, 7.0f);
@@ -1218,29 +1221,30 @@ tamanho da tela, com o alfa saindo de `voo_.alarme()` (seção 12). A ordem impo
 convite e a barra de dicas só custaria legibilidade justo quando há pressa para
 ler. No vale do ciclo o alfa é zero e a iluminação normal volta inteira; não há
 dois estados, só o número indo e voltando. O convite é ancorado no console mas desenhado em coordenadas de
-tela, com `medir()` dando o tamanho da tarja — e são **duas linhas de mesma
-largura**, `[E] Assumir os controles` e `[Q] Diagnostico do casco`, exatamente
-para a tarja sair retangular e as duas opções ficarem centralizadas sobre o
-painel sem cálculo à parte.
+tela, com `medir()` dando o tamanho da tarja — e são **três linhas de mesma
+largura**, `[E] Assumir os controles`, `[Q] Diagnostico do casco` e
+`[R] Repartir a energia`, exatamente para a tarja sair retangular e as três
+opções ficarem centralizadas sobre o painel sem cálculo à parte.
 
-As duas opções do painel saem por caminhos diferentes, e a diferença não é
-capricho: o `E` **fecha a cortina** e troca de mundo (a cabine cobre a tela
-inteira); o `Q` empilha um painel que é um *overlay* sobre o próprio convés, que
-continua visível atrás — não há para onde transicionar, então não há cortina.
+O painel é o **monitor central da nave**, e as três opções saem por caminhos
+diferentes. A diferença não é capricho: o `E` **fecha a cortina** e troca de
+mundo (a cabine cobre a tela inteira); o `Q` e o `R` empilham painéis que são
+*overlays* sobre o próprio convés, que continua visível atrás — não há para onde
+transicionar, então não há cortina.
 
-A **bancada** e o **repartidor de energia** são a segunda e a terceira parada do
-convés, e usam o mesmo `E`, sem conflito, porque as três zonas de interação não
-se cruzam: perto do painel o `E` pilota, perto da bancada ele solda, perto do
-repartidor ele abre a energia. Os dois seguem o caminho do `Q` — *overlay* sem
-cortina, porque o piloto não sai do convés — e os convites dos três saem da mesma
-`desenharConvite`, que existe justamente para as três bocas do convés não
+A **bancada** é a outra parada do convés e usa o mesmo `E` do painel, sem
+conflito, porque as duas zonas de interação não se cruzam: perto do painel o `E`
+pilota, perto da bancada ele solda. Ela segue o caminho do `Q` — *overlay* sem
+cortina, porque o piloto não sai do convés — e o convite dela sai da mesma
+`desenharConvite`, que existe justamente para as duas bocas do convés não
 parecerem coisas diferentes. Por isso também a barra de dicas diz `E: usar`, e
 não `E: painel`: qual móvel a tecla abre é a tarja flutuante que diz.
 
-A `desenharConvite` **grampeia a tarja dentro da tela**. Ela é ancorada no móvel,
-mas um móvel encostado na parede lateral fica a menos de meia tarja da borda, e
-ali a câmera já está no limite do mundo e não tem para onde correr — sem o
-grampo, o convite do repartidor saía pela direita.
+A `desenharConvite` **grampeia a tarja dentro da tela, nos dois eixos**. Ela é
+ancorada no móvel, mas um móvel encostado numa parede fica a menos de meia tarja
+da borda, e ali a câmera já está no limite do mundo e não tem para onde correr.
+Sem o grampo, o convite da bancada saía pelo lado e o do painel — que tem três
+linhas, e por isso é alto — saía por cima.
 
 ### FlightScene
 
@@ -1381,8 +1385,9 @@ mesmo motivo aritmético descrito acima.
 
 ### PowerScene
 
-O repartidor de energia do convés, aberto com `E` no canto oposto ao da bancada.
-Três fileiras de quatro lugares — motor, sensor, casco. **Cima e baixo escolhem
+A repartição de energia, aberta com `R` no painel de pilotagem — a terceira boca
+do monitor central, ao lado do `E` que pilota e do `Q` que lê o casco. Três
+fileiras de quatro lugares — motor, sensor, casco. **Cima e baixo escolhem
 a fileira**, na direção em que elas estão empilhadas; **esquerda e direita movem
 um ponto** entre ela e a **reserva**, na direção em que a fileira de pontos
 cresce. Cada eixo do direcional anda no sentido do que ele mexe, e é o que
@@ -1396,13 +1401,15 @@ não. Um pedido recusado — um quinto ponto num sistema, ou um ponto que não e
 na reserva — não muda nada e faz o painel piscar em vermelho, e é **um caminho
 de recusa só**, porque as duas condições são a mesma pergunta feita à nave.
 
-O que faz disso uma decisão, e não um menu de dificuldade, é a **geometria do
-convés**. Se desse para repartir a qualquer momento e de graça, o jogador poria
-sensor no talo ao entrar no campo denso e motor no talo quando o caminho
-estivesse limpo, e o sistema viraria uma tecla de trapaça com passos extras. A
-energia só se reparte aqui, e chegar aqui custa largar os controles e atravessar
-a nave — que, como sempre, segue voando sozinha. É o mesmo preço da bancada, pela
-mesma razão.
+O que faz disso uma decisão, e não um menu de dificuldade, é **de onde ela se
+mexe**. Se desse para repartir da cabine, o jogador poria sensor no talo ao
+entrar no campo denso e motor no talo quando o caminho estivesse limpo, e o
+sistema viraria uma tecla de trapaça. A energia só se reparte no convés, então
+mudar de ideia custa largar os controles, esperar a cortina fechar e abrir de
+novo do outro lado, e escolher com a nave voando sozinha — sem ver o campo de
+rochas em nenhum momento. É um preço menor que a travessia até a bancada, e de
+propósito: repartir é a decisão que se revê conforme a viagem se degrada, e
+cobrá-la como se cobra uma solda faria o jogador simplesmente não revê-la.
 
 Como a `StatusScene` e a `RepairScene`, ela não bloqueia o render, passa a ser
 quem chama `Flight::atualizar` com `Comando{}` enquanto está no topo, e **se
@@ -1411,9 +1418,10 @@ outras. E, como na bancada, o `acompanhar` **não mexe nos pontos**: eles não
 perseguem a simulação, são a escolha do jogador, e um painel aberto por cima não
 reparte energia por conta própria (seção 5).
 
-A leitura que fica na tela não é a tabela, é o resultado dela: **`AVISO 0,73 s`**,
-grande e sozinho, com a cor mudando conforme o número encolhe. As três fileiras
-acima são a conta.
+Cada fileira diz o que a energia comprou ali — `CRUZEIRO 62 u/s`, `ALCANCE 45 u`,
+`AGUENTA 8 ROCHAS` —, e é só isso. Os segundos de aviso (seção 12) são a conta
+que amarra as duas primeiras, mas quem a faz é o jogador: pôr o número pronto na
+tela transformaria a escolha em ler qual linha tem o maior valor.
 
 ### PauseScene
 
@@ -1678,8 +1686,8 @@ de um script Python (com Pillow) que qualquer pessoa pode rodar e ajustar.
 python tools/gen_assets.py
 ```
 
-Ele gera as texturas (tiles do interior, personagem, console, bancada,
-repartidor de energia), o atlas da fonte e os WAVs. Dois deles merecem explicação.
+Ele gera as texturas (tiles do interior, personagem, console, bancada), o atlas
+da fonte e os WAVs. Dois deles merecem explicação.
 
 **O ambiente (`espaco.wav`) é ruído marrom.** *Ruído branco* tem energia igual em
 todas as frequências e soa como chiado de televisão; o **ruído marrom** cai a

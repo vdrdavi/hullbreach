@@ -304,44 +304,6 @@ def gerar_bancada(largura: int = 48, altura: int = 32) -> None:
     print(f"{destino.name}: {img.width}x{img.height}")
 
 
-def gerar_energia(largura: int = 48, altura: int = 32) -> None:
-    """Repartidor de energia: e nele que o jogador decide de onde tirar.
-
-    Terceiro movel do conves, com a mesma pegada dos outros dois (3x2 tiles,
-    encostado numa parede), e a cor de novo e o que o distingue de longe: o
-    painel e azul de instrumento, a bancada e metal quente, e este e o
-    verde-agua do reator. As tres colunas de luz sao os tres sistemas -- ver o
-    movel ja e ver do que a tela dentro dele trata.
-    """
-    img = Image.new("RGBA", (largura, altura), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-
-    # carcaca
-    d.rounded_rectangle([0, 4, largura - 1, altura - 1], radius=3,
-                        fill=(46, 62, 62), outline=(24, 34, 34), width=1)
-
-    # as tres colunas de luz, cada uma com um nivel diferente: o movel mostra
-    # uma reparticao qualquer, e nao tres barras cheias que nao dizem nada.
-    colunas = [(6, 22), (20, 14), (34, 18)]
-    for (px, topo) in colunas:
-        d.rectangle([px, 8, px + 8, 25], fill=(16, 26, 28), outline=(28, 42, 44))
-        d.rectangle([px + 1, topo, px + 7, 24], fill=(96, 214, 176))
-        d.line([px + 1, topo, px + 7, topo], fill=(186, 250, 226))
-
-    # trilho de baixo, onde os pontos correm de um sistema para o outro
-    d.rectangle([4, 27, largura - 5, 29], fill=(24, 34, 34), outline=(38, 54, 54))
-    for px in (8, 16, 24, 32, 40):
-        d.point((px, 28), fill=(120, 240, 190))
-
-    # tampa e dobradica no topo
-    d.rectangle([largura // 2 - 9, 1, largura // 2 + 9, 4], fill=(38, 52, 52),
-                outline=(24, 34, 34))
-
-    destino = ASSETS / "textures" / "energia.png"
-    img.save(destino)
-    print(f"{destino.name}: {img.width}x{img.height}")
-
-
 def gerar_wav(nome: str, freq: float, duracao: float, forma: str = "quadrada") -> None:
     taxa = 44100
     total = int(taxa * duracao)
@@ -489,7 +451,6 @@ def main() -> None:
     gerar_interior()
     gerar_console()
     gerar_bancada()
-    gerar_energia()
     gerar_wav("blip.wav", 660.0, 0.07)
     gerar_wav("confirm.wav", 990.0, 0.14)
     gerar_wav("back.wav", 330.0, 0.12)

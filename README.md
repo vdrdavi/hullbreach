@@ -4,15 +4,15 @@ Você anda pelo interior de uma nave em 2D, usa o painel de pilotagem do convés
 a tela vira um voo 3D: um caça low poly atravessando um campo de estrelas gerado
 proceduralmente, desviando de asteroides. O mesmo painel também abre o
 diagnóstico do casco, que perde um pedaço a cada rocha — inclusive nas batidas
-que acontecem enquanto você anda lá dentro. Nos cantos opostos do convés há uma
-bancada onde se solda o casco de volta, um ponto de cada vez, e um repartidor de
-energia onde se decide quanto do motor, do sensor e da blindagem a nave vai ter —
-a soma é fixa, então toda vantagem sai do risco de outro lugar. Enquanto você
-anda entre os três, a nave segue voando sozinha lá fora. No fim do casco a nave passa a avisar: a sirene
+que acontecem enquanto você anda lá dentro — e a repartição de energia, onde se
+decide quanto do motor, do sensor e da blindagem a nave vai ter: a soma é fixa,
+então toda vantagem sai do risco de outro lugar. No canto oposto do convés há uma
+bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
+lá dentro, a nave segue voando sozinha lá fora. No fim do casco a nave passa a avisar: a sirene
 toca e o convés pisca em vermelho. Quando o casco acaba, a nave
 se despedaça na vista externa e a viagem termina ali.
 
-![Interior da nave: o convés de tiles com os três móveis — o painel de pilotagem ao fundo, a bancada de reparo à esquerda e o repartidor de energia à direita, com o convite [E] flutuando sobre ele](docs/interior.png)
+![Interior da nave: o convés de tiles com o painel de pilotagem ao fundo e as três opções que ele oferece — assumir os controles, o diagnóstico do casco e a repartição de energia](docs/interior.png)
 
 ![Voo 3D: o caça low poly triangular entre asteroides, com as estrelas riscando a tela ao redor](docs/voo.png)
 
@@ -115,10 +115,11 @@ cmake --preset debug -DCMAKE_PREFIX_PATH="$HOME/sdl3"
 | Ação | Teclado | Gamepad |
 |---|---|---|
 | Andar / pilotar / navegar | WASD ou setas | analógico esquerdo / direcional |
-| **Usar o painel / a bancada / a energia** (interior) | **E** | X (botão oeste) |
+| **Usar o painel / a bancada** (interior) | **E** | X (botão oeste) |
 | **Diagnóstico do casco** (no painel) | **Q** | Y (botão norte) |
+| **Repartição de energia** (no painel) | **R** | RB (ombro direito) |
 | **Soldar** (na bancada) | Espaço ou Enter | A (botão sul) |
-| **Repartir a energia** (no repartidor) | ↑↓ escolhe o sistema, ←→ move o ponto | direcional |
+| **Repartir os pontos** (na repartição) | ↑↓ escolhe o sistema, ←→ move o ponto | direcional |
 | Turbo (voo 3D) | Espaço | A (botão sul) |
 | Confirmar (menu) | Enter ou Espaço | A (botão sul) |
 | Ajustar volume / tela cheia (menu) | ← → | direcional |
@@ -201,15 +202,14 @@ automático e pode bater, e aí o convés inteiro sacode.
 O interior da nave não é gerado em código: `assets/maps/conves.mapa` é um arquivo
 de texto com a legenda de caracteres, marcadores nomeados e a grade desenhada
 caractere a caractere. Editar o cenário — mover o painel de pilotagem ou a
-bancada de reparo ou o repartidor de energia, abrir uma janela, mudar o tamanho
-do convés — é editar esse arquivo e rodar de novo, sem recompilar.
+bancada de reparo, abrir uma janela, mudar o tamanho do convés — é editar esse
+arquivo e rodar de novo, sem recompilar.
 
 ```
 legenda . piso
 legenda # parede
 marcador console 8.5 2
 marcador bancada 1.5 10
-marcador energia 15.5 10
 mapa
 ####################
 #-ooooo------ooooo-#

@@ -56,8 +56,7 @@ void InteriorScene::moverComColisao(SDL_FPoint deslocamento) {
         const SDL_FPoint candidato{posicao_.x + dx, posicao_.y + dy};
         const SDL_FRect caixa = caixaDoJogador(candidato);
 
-        if (sobrepoe(caixa, console_) || sobrepoe(caixa, bancada_) ||
-            sobrepoe(caixa, energia_)) {
+        if (sobrepoe(caixa, console_) || sobrepoe(caixa, bancada_)) {
             return;
         }
 
@@ -88,10 +87,6 @@ bool InteriorScene::pertoDaBancada() const {
     return sobrepoe(caixaDoJogador(posicao_), zonaDaBancada_);
 }
 
-bool InteriorScene::pertoDaEnergia() const {
-    return sobrepoe(caixaDoJogador(posicao_), zonaDaEnergia_);
-}
-
 void InteriorScene::aoEntrar(Context& ctx) {
     // O conves vem de assets/maps/conves.mapa; se o arquivo faltar ou estiver
     // torto, o MapaDeTiles loga e entrega uma sala fechada no lugar.
@@ -111,10 +106,6 @@ void InteriorScene::aoEntrar(Context& ctx) {
     bancadaSprite_.textura = ctx.assets.textura("textures/bancada.png");
     bancadaSprite_.tamanho = SDL_FPoint{48.0f, 32.0f};
     bancadaSprite_.ancora = SDL_FPoint{0.0f, 0.0f};
-
-    energiaSprite_.textura = ctx.assets.textura("textures/energia.png");
-    energiaSprite_.tamanho = SDL_FPoint{48.0f, 32.0f};
-    energiaSprite_.ancora = SDL_FPoint{0.0f, 0.0f};
 
     somConfirmar_ = ctx.audio.carregar("audio/confirm.wav");
 
@@ -140,15 +131,6 @@ void InteriorScene::aoEntrar(Context& ctx) {
     // Encostada na parede de baixo, a bancada so tem um lado por onde chegar:
     // a zona fica acima dela, e nao abaixo como a do painel.
     zonaDaBancada_ = SDL_FRect{bancada_.x - 10.0f, bancada_.y - 26.0f, bancada_.w + 20.0f, 26.0f};
-
-    // O repartidor de energia, no canto oposto ao da bancada e na mesma parede.
-    // Sem o marcador, o canto inferior direito -- o espelho do palpite dela.
-    SDL_FPoint cantoDaEnergia{mundo.w - energiaSprite_.tamanho.x - static_cast<float>(kTile),
-                              mundo.h - energiaSprite_.tamanho.y - static_cast<float>(kTile)};
-    mapa_.marcador("energia", cantoDaEnergia);
-    energia_ = SDL_FRect{cantoDaEnergia.x, cantoDaEnergia.y, energiaSprite_.tamanho.x,
-                         energiaSprite_.tamanho.y};
-    zonaDaEnergia_ = SDL_FRect{energia_.x - 10.0f, energia_.y - 26.0f, energia_.w + 20.0f, 26.0f};
 
     // Nasce de frente para o painel: o convite [E] aparece de cara.
     posicao_ = SDL_FPoint{console_.x + console_.w * 0.5f, console_.y + console_.h + 14.0f};
@@ -251,9 +233,10 @@ void InteriorScene::atualizar(Context& ctx, float dt) {
         return;
     }
 
-    // E a terceira parada, do outro lado da mesma parede. Tambem e overlay: quem
+    // A terceira boca do painel, e a unica com tecla propria: E ja pilota e Q ja
+    // le o casco. Segue o caminho do Q -- overlay sem cortina, porque quem
     // reparte a energia nao sai do conves.
-    if (pertoDaEnergia() && ctx.input.acaoPressionada(Acao::Interagir)) {
+    if (pertoDoConsole() && ctx.input.acaoPressionada(Acao::Energia)) {
         ctx.audio.tocar(somConfirmar_);
         ctx.cenas.empilhar(std::make_unique<PowerScene>(voo_));
         return;
@@ -317,21 +300,21 @@ void InteriorScene::desenharConvite(Context& ctx, const Camera& camera, const ch
     const SDL_FPoint tamanho = ctx.fonte.medir(texto, 1.0f);
     const float subida = std::sin(tempo_ * 4.0f) * 1.5f;
 
-    // A tarja e presa ao movel, mas nunca sai da tela: um movel encostado na
-    // parede lateral fica a menos de meia tarja da borda, e ali a camera ja
-    // esta no limite do mundo e nao tem para onde correr. Sem este grampo o
-    // convite do repartidor, no canto direito do conves, saia pela borda.
+    // A tarja e presa ao movel, mas nunca sai da tela, nos dois eixos: um movel
+    // encostado numa parede fica a menos de meia tarja da borda, e ali a camera
+    // ja esta no limite do mundo e nao tem para onde correr. Sem este grampo, o
+    // convite da bancada saia pelo lado e o do painel -- que tem tres linhas --
+    // saia por cima.
     const float meiaTarja = tamanho.x * 0.5f + 6.0f;
     const float centro = std::clamp(acima.x, meiaTarja + kMargemDaTarja,
                                     static_cast<float>(App::kLarguraLogica) - meiaTarja -
                                         kMargemDaTarja);
+    const float topo = std::max(acima.y - tamanho.y - 4.0f + subida, kMargemDaTarja);
 
-    draw::retanguloTela(ctx.renderer,
-                        SDL_FRect{centro - meiaTarja, acima.y - tamanho.y - 4.0f + subida,
-                                  tamanho.x + 12.0f, tamanho.y + 6.0f},
-                        SDL_Color{10, 14, 24, 200});
-    ctx.fonte.desenharCentralizado(ctx.renderer, texto, centro,
-                                   acima.y - tamanho.y - 1.0f + subida,
+    draw::retanguloTela(
+        ctx.renderer, SDL_FRect{centro - meiaTarja, topo, tamanho.x + 12.0f, tamanho.y + 6.0f},
+        SDL_Color{10, 14, 24, 200});
+    ctx.fonte.desenharCentralizado(ctx.renderer, texto, centro, topo + 3.0f,
                                    SDL_Color{150, 230, 255, 255}, 1.0f);
 }
 
@@ -391,15 +374,6 @@ void InteriorScene::desenhar(Context& ctx, float alpha) {
                          SDL_FRect{bancada_.x + 4.0f, bancada_.y + 13.0f, 10.0f, 4.0f},
                          SDL_Color{250, 190, 90, static_cast<Uint8>(20.0f + brasa * 60.0f)});
 
-    // Repartidor de energia, com as tres colunas respirando juntas. O verde-agua
-    // e mais rapido que os outros dois pulsos do conves: o painel pensa, a
-    // bancada esquenta, e o reator corre.
-    draw::sprite(ctx.renderer, camera, energiaSprite_, SDL_FPoint{energia_.x, energia_.y});
-    const float reator = 0.5f + 0.5f * std::sin(tempo_ * 3.3f + 0.4f);
-    draw::retanguloMundo(ctx.renderer, camera,
-                         SDL_FRect{energia_.x + 8.0f, energia_.y + 10.0f, 32.0f, 6.0f},
-                         SDL_Color{120, 240, 190, static_cast<Uint8>(16.0f + reator * 52.0f)});
-
     // Jogador
     const SDL_FPoint desenhada = interpolar(posicaoAnterior_, posicao_, alpha);
     draw::retanguloMundo(ctx.renderer, camera,
@@ -427,23 +401,26 @@ void InteriorScene::desenhar(Context& ctx, float alpha) {
                             luz);
     }
 
-    // Convite de interacao. As tres zonas nao se cruzam, entao o encadeamento e
-    // so para deixar dito que ha um convite de cada vez na tela.
+    // Convite de interacao. As duas zonas nao se cruzam, entao o `else` e so
+    // para deixar dito que ha um convite de cada vez na tela. O do painel tem
+    // tres linhas de mesma largura -- as tres bocas do monitor central --, e e
+    // por isso que a tarja sai retangular sem calculo a parte.
     if (pertoDoConsole()) {
-        desenharConvite(ctx, camera, "[E] Assumir os controles\n[Q] Diagnostico do casco",
+        desenharConvite(ctx, camera,
+                        "[E] Assumir os controles\n[Q] Diagnostico do casco\n"
+                        "[R] Repartir a energia",
                         console_);
     } else if (pertoDaBancada()) {
         desenharConvite(ctx, camera, "[E] Soldar o casco", bancada_);
-    } else if (pertoDaEnergia()) {
-        desenharConvite(ctx, camera, "[E] Repartir a energia", energia_);
     }
 
     // HUD
-    // "usar" e nao "painel": a mesma tecla abre os tres moveis, e qual deles e
-    // quem diz e a tarja que flutua sobre o que estiver ao alcance.
-    const char* dica = ctx.input.temGamepad()
-                           ? "analogico: andar   X: usar   Y: casco   Start: pausar"
-                           : "WASD: andar   E: usar   Q: casco   Esc: pausar";
+    // "usar" e nao "painel": a mesma tecla abre o painel e a bancada, e qual
+    // deles e quem diz e a tarja que flutua sobre o que estiver ao alcance.
+    const char* dica =
+        ctx.input.temGamepad()
+            ? "analogico: andar   X: usar   Y: casco   RB: energia   Start: pausar"
+            : "WASD: andar   E: usar   Q: casco   R: energia   Esc: pausar";
     const SDL_FPoint tamanhoDica = ctx.fonte.medir(dica, 1.0f);
     const float meio = static_cast<float>(App::kLarguraLogica) * 0.5f;
     const float yDica = static_cast<float>(App::kAlturaLogica) - 24.0f;

@@ -24,6 +24,7 @@ enum class Acao {
     Pausar,
     Interagir,
     Diagnostico,
+    Energia,
     Contagem,
 };
 
