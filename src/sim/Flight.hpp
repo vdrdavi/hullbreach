@@ -96,19 +96,23 @@ public:
     /// os dois soltos, os extremos passam a ser **duas vistas diferentes**, e
     /// nao a mesma vista mais perto ou mais longe:
     ///
-    /// - no minimo, alem de 55 unidades nao ha nada desenhado. O campo vira uma
+    /// - no minimo, alem de 50 unidades nao ha nada desenhado. O campo vira uma
     ///   bolha estreita de bruma que so clareia em cima da nave, e a rocha
     ///   materializa-se do vazio a menos de um segundo do casco;
-    /// - no maximo ve-se ate 200, alem da borda do cubo de rochas (raio 170):
-    ///   o campo aparece inteiro, com as pedras da borda ainda 71% na nevoa,
-    ///   emergindo dela em vez de estalar na tela.
+    /// - do neutro para cima o fim para em 105 e **nao sobe mais**. Nao e
+    ///   preguica de tabela: alem dali esta a borda do cubo de rochas, e o que
+    ///   entra por ela e pedra nascendo. Uma rocha recem-envolvida esta a pelo
+    ///   menos 170 da nave, e a mais rasa que ainda cabe no quadro -- no canto
+    ///   dele, onde o angulo e maior -- esta a 107 de profundidade. 105 e o
+    ///   teto que garante que nenhuma reparticao veja isso acontecer.
     ///
-    /// O fim passar do raio do campo nao desperdica nada -- e o que garante que
-    /// no maximo nao sobre nevoa nenhuma sobre o que existe.
-    static constexpr float kSensorNitidoPorPonto[kPontoMaximo + 1] = {12.0f, 12.0f, 45.0f, 70.0f,
-                                                                      95.0f};
-    static constexpr float kSensorVisivelPorPonto[kPontoMaximo + 1] = {55.0f, 55.0f, 110.0f,
-                                                                       155.0f, 200.0f};
+    /// O que o sensor melhora a partir do neutro, entao, nao e a distancia em
+    /// que a rocha aparece: e a distancia em que ela deixa de ser borrao. Que e
+    /// justamente o numero acionavel, e o unico que o painel mostra.
+    static constexpr float kSensorNitidoPorPonto[kPontoMaximo + 1] = {12.0f, 12.0f, 45.0f, 68.0f,
+                                                                      88.0f};
+    static constexpr float kSensorVisivelPorPonto[kPontoMaximo + 1] = {50.0f, 50.0f, 105.0f,
+                                                                       105.0f, 105.0f};
     /// Quanto do casco cada rocha leva embora: quatro, oito, doze ou dezesseis
     /// batidas do casco inteiro ao nada. Os valores sao escolhidos para
     /// batidasSuportadasDe dar numero redondo -- 0,084 e um pouco menos que um

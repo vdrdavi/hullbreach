@@ -845,9 +845,9 @@ float envolver(float distancia, float raio) {   // mantém em [-raio, raio)
 Memória constante, campo infinito. São 1800 estrelas em um cubo de raio 150 e 740
 rochas em um cubo de raio 170.
 
-**Por que 740, e não um número redondo.** O raio do cubo tem que ficar além do
-alcance nítido do melhor sensor (95, seção 12), senão a rocha que entra pela
-borda aparece pronta em vez de emergir. Mas a **densidade** é que decide quantas
+**Por que 740, e não um número redondo.** O raio do cubo é também o corte de
+desenho, e é dele que sai o teto do sensor (adiante). Mas a **densidade** é que
+decide quantas
 pedras se cruza por minuto, e ela cai com o cubo da aresta — então aumentar o
 campo sem aumentar a quantidade seria baixar a dificuldade pela porta dos fundos.
 740 é o que mantém a densidade que 200 rochas tinham no cubo de raio 110: 1,88
@@ -867,9 +867,23 @@ voando reto, as mesmas pedras voltam na mesma formação a cada travessia do cub
 Com estrelas isso passa batido; com rochas, que têm forma, a repetição aparece.
 Então quem atravessa a borda é **sorteado de novo** nos eixos que *não* viraram,
 e ganha raio, giro e malha novos. A troca acontece a uma aresta inteira de
-distância, dentro da névoa — longe dos olhos. É esse "dentro da névoa" que amarra
-o raio do cubo à tabela do sensor: com o campo terminando antes do que o melhor
-sensor mostra limpo, a troca aconteceria na cara do jogador.
+distância, dentro da névoa — longe dos olhos.
+
+**Onde a névoa precisa terminar, e por quê.** Uma rocha recém-envolvida está a
+pelo menos um raio de cubo (170) da nave, e nessa distância `submeter` nem a
+desenha: o corte por raio a descarta antes. Ela só entra em cena quando cruza
+esse corte — e é *aí*, e não no nascimento, que ela pode aparecer com opacidade
+do nada. A pedra que entra mais rasa é a que passa pelo **canto do quadro**,
+onde o ângulo de visão é maior; medindo 600 quadros de voo manobrado, ela entra
+a **108 unidades de profundidade**, o que confere com a conta (170 dividido pela
+diagonal do campo de visão dá 107).
+
+Daí o teto de 105 no fim da névoa (seção 12): abaixo de 108, a rocha que cruza o
+corte de desenho ainda está inteiramente apagada e só depois emerge. A mesma
+medição com o teto em 200 pegava pedras entrando a **82% de opacidade** — e é
+exatamente o "asteroide nascendo" que se via. No neutro de antes (110) dava 3%,
+imperceptível, e é por isso que o problema só apareceu quando o sensor ganhou
+alcance.
 
 **A rocha atingida entra pelo mesmo lugar.** Depois de uma batida ela não some:
 `reposicionar` a manda para outro canto do cubo, e a uma aresta inteira de
@@ -1021,10 +1035,10 @@ painel de pilotagem, no `R` (`PowerScene`, seção 13); quem guarda a regra é o
 
 | Pontos | Motor (cruzeiro) | Sensor (nítido / vê até) | Casco (dano por rocha) |
 |---|---|---|---|
-| 1 | 30 u/s | 12 u / 55 u | 0,25 — 4 batidas |
-| **2** | **62 u/s** | **45 u / 110 u** | **0,125 — 8 batidas** |
-| 3 | 82 u/s | 70 u / 155 u | 0,084 — 12 batidas |
-| 4 | 100 u/s | 95 u / 200 u | 0,0625 — 16 batidas |
+| 1 | 30 u/s | 12 u / 50 u | 0,25 — 4 batidas |
+| **2** | **62 u/s** | **45 u / 105 u** | **0,125 — 8 batidas** |
+| 3 | 82 u/s | 68 u / 105 u | 0,084 — 12 batidas |
+| 4 | 100 u/s | 88 u / 105 u | 0,0625 — 16 batidas |
 
 **A linha do meio é o jogo como ele sempre foi**, número por número, e isso não é
 coincidência: a viagem começa em (2, 2, 2), e é o que mantém válido todo o ajuste
@@ -1047,16 +1061,15 @@ unidades de faixa e a pedra estalaria na tela em vez de emergir. Com as duas
 pontas soltas, os extremos passam a ser duas vistas diferentes, e não a mesma
 vista mais perto ou mais longe:
 
-- **no mínimo**, além de 55 unidades não há nada desenhado. O campo vira uma
+- **no mínimo**, além de 50 unidades não há nada desenhado. O campo vira uma
   bolha estreita de bruma que só clareia em cima da nave, e a maior parte das
   rochas some da tela — não escurece, some;
-- **no máximo** vê-se até 200, além da borda do cubo de rochas (raio 170): o
-  campo aparece inteiro, com as pedras da borda ainda 71% na névoa, emergindo
-  dela em vez de estalar na tela.
-
-O fim passar do raio do campo é o que garante que nenhuma repartição veja pedra
-aparecendo pronta na borda — e é a razão de o cubo ter crescido junto (seção
-11.1).
+- **do neutro para cima o fim para em 105 e não sobe mais.** Não é preguiça de
+  tabela: é o teto que impede a pedra de aparecer nascendo, e ele sai da
+  geometria do campo (seção 11.1). O que o sensor melhora daí para cima não é a
+  distância em que a rocha aparece — é a distância em que ela deixa de ser
+  borrão, de 45 para 88 unidades. Que é justamente o número acionável, e o único
+  que o painel mostra.
 
 O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
 sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o
@@ -1074,12 +1087,12 @@ segundos de aviso = alcance do sensor ÷ velocidade de cruzeiro
 
 É o tempo entre a rocha ficar **nítida** e alcançar a nave — a medida
 conservadora, porque a pedra já se insinua na névoa antes disso. As dez
-repartições possíveis o espalham de **0,12 s a 3,17 s**, um intervalo de vinte e
-seis vezes, com (2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três
+repartições possíveis o espalham de **0,12 s a 2,93 s**, um intervalo de vinte e
+quatro vezes, com (2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três
 sistemas de uma vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s com a
 pedra saindo do borrão a 12 unidades do nariz e cede em quatro rochas; `M1 S4 C1`
-enxerga o campo inteiro com 3,17 s de folga, mas se arrasta a 30 u/s e cede nas
-mesmas quatro.
+tem quase três segundos de folga, mas se arrasta a 30 u/s e cede nas mesmas
+quatro.
 
 O painel **não mostra esse número** — ele mostra o que cada sistema comprou, e a
 conta de quanto tempo isso dá para reagir fica com o jogador. Quem quiser vê-lo

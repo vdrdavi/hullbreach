@@ -14,11 +14,12 @@ constexpr float kLimitePitch = 1.15f; // rad
 
 // Campo de asteroides: o cubo com wrap e tambem o alcance de desenho.
 //
-// O raio precisa ficar alem do que o melhor sensor mostra sem nevoa (95, veja
-// Flight::kSensorNitidoPorPonto), senao a rocha que entra pela borda do cubo
-// aparece pronta em vez de emergir. Com 170 ela chega a borda ainda 71% na
-// nevoa, e com o sensor no minimo nem e desenhada: nenhuma reparticao ve pedra
-// estalando na tela.
+// O raio e tambem o corte de desenho de AsteroidField::submeter, e e dele que
+// sai o teto do sensor. A rocha que entra no corte mais rasa e a que passa pelo
+// canto do quadro: com raio 170 ela entra a 107 de profundidade (medido, veja
+// a secao 11.1 do guia). Por isso o fim da nevoa para em 105 -- acima disso a
+// pedra apareceria com opacidade ja no quadro em que comeca a ser desenhada,
+// que e o "asteroide nascendo" que se ve.
 //
 // A quantidade acompanha o cubo **ao cubo**, e nao e enfeite: a densidade e que
 // decide quantas rochas se cruza por minuto, entao 200 em um cubo de raio 110
