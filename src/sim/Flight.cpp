@@ -14,19 +14,25 @@ constexpr float kLimitePitch = 1.15f; // rad
 
 // Campo de asteroides: o cubo com wrap e tambem o alcance de desenho.
 //
-// O raio e tambem o corte de desenho de AsteroidField::submeter, e e dele que
-// sai o teto do sensor. A rocha que entra no corte mais rasa e a que passa pelo
-// canto do quadro: com raio 170 ela entra a 107 de profundidade (medido, veja
-// a secao 11.1 do guia). Por isso o fim da nevoa para em 105 -- acima disso a
-// pedra apareceria com opacidade ja no quadro em que comeca a ser desenhada,
-// que e o "asteroide nascendo" que se ve.
+// O raio e o que decide ate onde o sensor pode enxergar, e por um caminho
+// indireto: a rocha que o wrap traz de volta esta a um raio de distancia, mas em
+// **profundidade de camera** pode estar bem mais perto, se vier pelo canto do
+// quadro. Se a nevoa ainda a mostrar nessa profundidade, ela aparece do nada --
+// e o "asteroide nascendo" que se ve na borda do campo.
+//
+// Medindo o submeter por 580 quadros de voo manobrado em turbo (o pior caso: o
+// fov abre de 62 para 80 graus e aproxima a entrada mais rasa), com raio 280 a
+// pedra mais rasa entra a 151 de profundidade. Dai o teto de 150 no fim da nevoa
+// (Flight::kSensorVisivelPorPonto). Com o raio anterior, de 170, o mesmo limite
+// caia para 118 -- era o que prendia o sensor em 105.
 //
 // A quantidade acompanha o cubo **ao cubo**, e nao e enfeite: a densidade e que
 // decide quantas rochas se cruza por minuto, entao 200 em um cubo de raio 110
-// viram 740 em um de raio 170 (1,88e-5 rocha por unidade cubica nos dois).
+// viram 3300 em um de raio 280 (1,88e-5 rocha por unidade cubica nos dois).
 // Aumentar o campo sem isso seria baixar a dificuldade pela porta dos fundos.
-constexpr float kRaioCampo = 170.0f;
-constexpr int kQuantidadeRochas = 740;
+// Medido em release: 4,9 ms por quadro, contra os 16,7 de 60 Hz.
+constexpr float kRaioCampo = 280.0f;
+constexpr int kQuantidadeRochas = 3300;
 constexpr float kRaioNave = 2.0f;
 
 // Batida: a nave quase para e o baque decai por si.

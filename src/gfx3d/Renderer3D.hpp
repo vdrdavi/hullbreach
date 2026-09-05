@@ -33,6 +33,12 @@ public:
     /// inteiro na borda do campo; com isso ele emerge do vazio. `fim <= inicio`
     /// desliga a nevoa.
     void definirNevoa(SDL_FColor cor, float inicio, float fim);
+    /// Onde a nevoa termina, em profundidade de camera: alem disto uma face ja
+    /// saiu com a cor do fundo e nem chega a ser desenhada. Quem submete
+    /// geometria le isto para descartar antes o que a nevoa apagaria depois --
+    /// e o corte tem que ser **esta** grandeza, e nao a distancia radial, senao
+    /// os dois discordam e o objeto aparece com cor ao cruzar o corte.
+    float nevoaFim() const { return nevoaFim_; }
 
     /// Comeca um novo quadro (descarta o lote anterior).
     void iniciarQuadro() { faces_.clear(); }

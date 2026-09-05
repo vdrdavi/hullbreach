@@ -119,10 +119,25 @@ void AsteroidField::centralizar(Vec3 posicao) {
 
 void AsteroidField::submeter(Renderer3D& cena) const {
     const Vec3 olho = cena.camera().posicao;
+    const Vec3 frente = -cena.camera().orientacao.colunas[2];
+    const float fim = cena.nevoaFim();
     for (const Asteroide& rocha : asteroides_) {
-        // O cubo tem canto: uma rocha no vertice esta a raio*sqrt(3) e so
-        // gastaria faces que a nevoa ja apagou.
-        if (comprimento(rocha.posicao - olho) - rocha.raio > raio_) {
+        // O corte e por **profundidade de camera**, a mesma grandeza da nevoa, e
+        // isso importa mais do que parece. Aqui ja se descartou por distancia
+        // radial, o que so vale enquanto o corte for mais largo que a nevoa: uma
+        // rocha longe do eixo pode estar a 300 da nave e a 120 de profundidade,
+        // e o corte radial a tirava de cena enquanto a nevoa ainda a mostraria.
+        // No quadro em que ela cruzasse o corte, apareceria com cor do nada --
+        // era o "asteroide nascendo" que se via na borda do campo.
+        //
+        // Casando as duas grandezas, o corte vira um subconjunto do que a nevoa
+        // apaga: nada e descartado antes de estar invisivel, com qualquer
+        // alcance de sensor. O cubo ainda tem canto, e a rocha do vertice segue
+        // sendo descartada -- so que por estar atras da nevoa, e nao por um raio
+        // que nao sabia dela.
+        const Vec3 desvio = rocha.posicao - olho;
+        const float profundidade = dot(desvio, frente);
+        if (profundidade - rocha.raio > fim || profundidade + rocha.raio < 0.0f) {
             continue;
         }
         cena.submeter(malhas_[rocha.malha], rocha.posicao,

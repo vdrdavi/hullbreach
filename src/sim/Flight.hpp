@@ -99,20 +99,25 @@ public:
     /// - no minimo, alem de 50 unidades nao ha nada desenhado. O campo vira uma
     ///   bolha estreita de bruma que so clareia em cima da nave, e a rocha
     ///   materializa-se do vazio a menos de um segundo do casco;
-    /// - do neutro para cima o fim para em 105 e **nao sobe mais**. Nao e
-    ///   preguica de tabela: alem dali esta a borda do cubo de rochas, e o que
-    ///   entra por ela e pedra nascendo. Uma rocha recem-envolvida esta a pelo
-    ///   menos 170 da nave, e a mais rasa que ainda cabe no quadro -- no canto
-    ///   dele, onde o angulo e maior -- esta a 107 de profundidade. 105 e o
-    ///   teto que garante que nenhuma reparticao veja isso acontecer.
+    /// - no maximo ve-se ate 150, tres vezes o minimo: a vista atravessa boa
+    ///   parte do campo e as pedras somem so bem la atras.
     ///
-    /// O que o sensor melhora a partir do neutro, entao, nao e a distancia em
-    /// que a rocha aparece: e a distancia em que ela deixa de ser borrao. Que e
-    /// justamente o numero acionavel, e o unico que o painel mostra.
-    static constexpr float kSensorNitidoPorPonto[kPontoMaximo + 1] = {12.0f, 12.0f, 45.0f, 68.0f,
-                                                                      88.0f};
-    static constexpr float kSensorVisivelPorPonto[kPontoMaximo + 1] = {50.0f, 50.0f, 105.0f,
-                                                                       105.0f, 105.0f};
+    /// O teto de 150 nao e escolha de gosto, e o que o campo permite. Duas
+    /// coisas o prendiam:
+    ///
+    /// 1. **o corte de desenho**, que descartava por distancia radial enquanto a
+    ///    nevoa media profundidade. Grandezas diferentes discordam, e a rocha
+    ///    aparecia com cor ao cruzar o corte. Hoje AsteroidField::submeter corta
+    ///    pela mesma profundidade, entao o corte e um subconjunto do que a nevoa
+    ///    ja apagou -- e deixou de limitar o alcance;
+    /// 2. **o wrap**, que traz a rocha de volta a um raio de cubo da nave. Em
+    ///    profundidade ela pode estar bem mais perto, se vier pelo canto do
+    ///    quadro, e ai a nevoa precisa alcanca-la. Isso ainda limita, e so cede
+    ///    com o cubo maior: e a razao de kRaioCampo ter ido a 280.
+    static constexpr float kSensorNitidoPorPonto[kPontoMaximo + 1] = {12.0f, 12.0f, 45.0f, 70.0f,
+                                                                      95.0f};
+    static constexpr float kSensorVisivelPorPonto[kPontoMaximo + 1] = {50.0f, 50.0f, 110.0f,
+                                                                       130.0f, 150.0f};
     /// Quanto do casco cada rocha leva embora: quatro, oito, doze ou dezesseis
     /// batidas do casco inteiro ao nada. Os valores sao escolhidos para
     /// batidasSuportadasDe dar numero redondo -- 0,084 e um pouco menos que um
