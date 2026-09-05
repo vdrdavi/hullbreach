@@ -135,22 +135,25 @@ void PowerScene::atualizar(Context& ctx, float dt) {
     realceTroca_ = std::max(0.0f, realceTroca_ - kDecaimentoRealce * dt);
     realceRecusa_ = std::max(0.0f, realceRecusa_ - kDecaimentoRealce * dt);
 
-    // As laterais escolhem o sistema, e dao a volta: com tres fileiras, chegar
-    // na ultima pela esquerda e mais curto do que atravessar as tres.
-    if (ctx.input.acaoPressionada(Acao::Esquerda)) {
+    // Cima e baixo escolhem o sistema, na direcao em que as fileiras estao
+    // empilhadas, e dao a volta: com tres fileiras, chegar na ultima por cima e
+    // mais curto do que atravessar as tres.
+    if (ctx.input.acaoPressionada(Acao::Cima)) {
         escolhido_ = static_cast<Sistema>((escolhido_ + kSistemas - 1) % kSistemas);
         ctx.audio.tocar(somMover_);
-    } else if (ctx.input.acaoPressionada(Acao::Direita)) {
+    } else if (ctx.input.acaoPressionada(Acao::Baixo)) {
         escolhido_ = static_cast<Sistema>((escolhido_ + 1) % kSistemas);
         ctx.audio.tocar(somMover_);
     }
 
-    // Cima e baixo movem o ponto entre o sistema e a reserva. Nao existe um
-    // atalho que tire de um e ponha no outro: a energia passa pela reserva a
-    // vista, e e isso que mostra que ela e conservada em vez de aparecer.
-    if (ctx.input.acaoPressionada(Acao::Cima)) {
+    // As laterais movem o ponto entre o sistema e a reserva, na direcao em que a
+    // fileira de pontos cresce: direita enche, esquerda esvazia. Nao existe um
+    // atalho que tire de um sistema e ponha no outro -- a energia passa pela
+    // reserva a vista, e e isso que mostra que ela e conservada em vez de
+    // aparecer.
+    if (ctx.input.acaoPressionada(Acao::Direita)) {
         distribuir(ctx);
-    } else if (ctx.input.acaoPressionada(Acao::Baixo)) {
+    } else if (ctx.input.acaoPressionada(Acao::Esquerda)) {
         recolher(ctx);
     }
 }
@@ -275,8 +278,11 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     ctx.fonte.desenharCentralizado(ctx.renderer, "o tempo entre a rocha surgir e o casco", meio, y,
                                    kCorApagada, 1.0f);
 
-    const char* dica = ctx.input.temGamepad() ? "direcional: repartir   B ou X: voltar ao conves"
-                                              : "setas: repartir   Esc ou E: voltar ao conves";
+    // A dica nomeia os dois eixos separados: qual seta faz o que nao e obvio
+    // antes de experimentar, e experimentar aqui custa uma travessia do conves.
+    const char* dica = ctx.input.temGamepad()
+                           ? "direcional: sistema e energia   B ou X: voltar ao conves"
+                           : "cima/baixo: sistema   esq/dir: energia   Esc: voltar";
     ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, vidro.y + vidro.h + 12.0f, kCorTexto,
                                    1.0f);
 }

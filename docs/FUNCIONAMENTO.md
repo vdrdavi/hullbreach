@@ -1363,10 +1363,13 @@ mesmo motivo aritmético descrito acima.
 ### PowerScene
 
 O repartidor de energia do convés, aberto com `E` no canto oposto ao da bancada.
-Três fileiras de quatro lugares — motor, sensor, casco —, as setas laterais
-escolhem a fileira e as verticais movem um ponto entre ela e a **reserva**. Não
-há atalho que tire de um sistema e ponha no outro de uma vez: a energia passa
-pela reserva à vista, e é isso que mostra que ela é conservada em vez de aparecer.
+Três fileiras de quatro lugares — motor, sensor, casco. **Cima e baixo escolhem
+a fileira**, na direção em que elas estão empilhadas; **esquerda e direita movem
+um ponto** entre ela e a **reserva**, na direção em que a fileira de pontos
+cresce. Cada eixo do direcional anda no sentido do que ele mexe, e é o que
+dispensa decorar qual seta faz o quê. Não há atalho que tire de um sistema e
+ponha no outro de uma vez: a energia passa pela reserva à vista, e é isso que
+mostra que ela é conservada em vez de aparecer.
 
 As regras de quanto cada ponto compra ficam no `Flight` (seção 12), e a recusa de
 uma repartição inválida também: a cena pede `repartirEnergia` e a nave aceita ou

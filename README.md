@@ -118,7 +118,7 @@ cmake --preset debug -DCMAKE_PREFIX_PATH="$HOME/sdl3"
 | **Usar o painel / a bancada / a energia** (interior) | **E** | X (botão oeste) |
 | **Diagnóstico do casco** (no painel) | **Q** | Y (botão norte) |
 | **Soldar** (na bancada) | Espaço ou Enter | A (botão sul) |
-| **Repartir a energia** (no repartidor) | setas | direcional |
+| **Repartir a energia** (no repartidor) | ↑↓ escolhe o sistema, ←→ move o ponto | direcional |
 | Turbo (voo 3D) | Espaço | A (botão sul) |
 | Confirmar (menu) | Enter ou Espaço | A (botão sul) |
 | Ajustar volume / tela cheia (menu) | ← → | direcional |

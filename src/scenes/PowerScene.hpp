@@ -41,8 +41,8 @@ public:
     bool bloqueiaRender() const override { return false; }
 
 private:
-    /// Os tres sistemas, na ordem em que aparecem na tela e em que as setas
-    /// laterais os percorrem.
+    /// Os tres sistemas, na ordem em que aparecem na tela e em que cima e baixo
+    /// os percorrem.
     enum Sistema { kMotor = 0, kSensor = 1, kCasco = 2, kSistemas = 3 };
 
     /// A celula de um ponto na fileira, e o vao entre duas.
