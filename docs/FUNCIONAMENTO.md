@@ -842,8 +842,19 @@ float envolver(float distancia, float raio) {   // mantém em [-raio, raio)
 }
 ```
 
-Memória constante, campo infinito. São 1800 estrelas em um cubo de raio 150 e 200
-rochas em um cubo de raio 110.
+Memória constante, campo infinito. São 1800 estrelas em um cubo de raio 150 e 740
+rochas em um cubo de raio 170.
+
+**Por que 740, e não um número redondo.** O raio do cubo tem que ficar além do
+alcance nítido do melhor sensor (95, seção 12), senão a rocha que entra pela
+borda aparece pronta em vez de emergir. Mas a **densidade** é que decide quantas
+pedras se cruza por minuto, e ela cai com o cubo da aresta — então aumentar o
+campo sem aumentar a quantidade seria baixar a dificuldade pela porta dos fundos.
+740 é o que mantém a densidade que 200 rochas tinham no cubo de raio 110: 1,88
+rocha por cem mil unidades cúbicas nos dois. O custo medido de sair de um para o
+outro foi de 2,2 para 3,0 ms por quadro no renderizador de software, contra os
+16,7 ms de um quadro a 60 Hz — sublinear, porque `submeter` já descartava os
+cantos do cubo.
 
 **O rastro das estrelas** é um truque de perspectiva: a cauda é a projeção da
 estrela **deslocada de `+v·Δt`**. Como quem andou foi a câmera, deslocar a
@@ -856,7 +867,17 @@ voando reto, as mesmas pedras voltam na mesma formação a cada travessia do cub
 Com estrelas isso passa batido; com rochas, que têm forma, a repetição aparece.
 Então quem atravessa a borda é **sorteado de novo** nos eixos que *não* viraram,
 e ganha raio, giro e malha novos. A troca acontece a uma aresta inteira de
-distância, dentro da névoa — longe dos olhos.
+distância, dentro da névoa — longe dos olhos. É esse "dentro da névoa" que amarra
+o raio do cubo à tabela do sensor: com o campo terminando antes do que o melhor
+sensor mostra limpo, a troca aconteceria na cara do jogador.
+
+**A rocha atingida entra pelo mesmo lugar.** Depois de uma batida ela não some:
+`reposicionar` a manda para outro canto do cubo, e a uma aresta inteira de
+distância, como as do wrap. Sorteada mais perto — era o que fazia, a 55 unidades
+—, ela se materializava pronta bem à frente do piloto no instante seguinte ao
+tranco, justo quando ele está olhando. O sorteio inicial (`gerar`) continua com
+um limite bem menor, e por outro motivo: ali só é preciso que o campo não nasça
+com uma pedra dentro da cabine.
 
 Um detalhe fino de ponto flutuante mora aí: o teste de "virou" é por magnitude
 (`fabs(envolvido - relativo) > raio`), não por igualdade. `envolver()` soma e
@@ -1021,7 +1042,7 @@ como ela é; do primeiro ao segundo ela vai virando a cor do fundo; **além do
 segundo o `Renderer3D` nem a desenha**, porque ela já seria fundo.
 
 Mover só o início não dava disparidade nenhuma, e a razão era o teto: o fim era a
-borda do campo de rochas (raio 110), então com o início em 100 sobrariam 10
+borda do campo de rochas, então com o início em 100 sobrariam 10
 unidades de faixa e a pedra estalaria na tela em vez de emergir. Com as duas
 pontas soltas, os extremos passam a ser duas vistas diferentes, e não a mesma
 vista mais perto ou mais longe:
@@ -1029,12 +1050,13 @@ vista mais perto ou mais longe:
 - **no mínimo**, além de 55 unidades não há nada desenhado. O campo vira uma
   bolha estreita de bruma que só clareia em cima da nave, e a maior parte das
   rochas some da tela — não escurece, some;
-- **no máximo**, o fim (200) está bem além da borda do campo, então nem a pedra
-  mais distante chega a 15% de névoa: vê-se o campo inteiro nítido, até onde ele
-  existe.
+- **no máximo** vê-se até 200, além da borda do cubo de rochas (raio 170): o
+  campo aparece inteiro, com as pedras da borda ainda 71% na névoa, emergindo
+  dela em vez de estalar na tela.
 
-O fim passar do raio do campo não desperdiça nada — é justamente o que garante
-que no máximo não sobre névoa nenhuma sobre o que existe de fato.
+O fim passar do raio do campo é o que garante que nenhuma repartição veja pedra
+aparecendo pronta na borda — e é a razão de o cubo ter crescido junto (seção
+11.1).
 
 O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
 sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o

@@ -99,9 +99,9 @@ public:
     /// - no minimo, alem de 55 unidades nao ha nada desenhado. O campo vira uma
     ///   bolha estreita de bruma que so clareia em cima da nave, e a rocha
     ///   materializa-se do vazio a menos de um segundo do casco;
-    /// - no maximo, o fim (200) esta bem alem da borda do campo, entao nem a
-    ///   pedra mais distante chega a 15% de nevoa: ve-se o campo inteiro nitido,
-    ///   ate onde ele existe.
+    /// - no maximo ve-se ate 200, alem da borda do cubo de rochas (raio 170):
+    ///   o campo aparece inteiro, com as pedras da borda ainda 71% na nevoa,
+    ///   emergindo dela em vez de estalar na tela.
     ///
     /// O fim passar do raio do campo nao desperdica nada -- e o que garante que
     /// no maximo nao sobre nevoa nenhuma sobre o que existe.

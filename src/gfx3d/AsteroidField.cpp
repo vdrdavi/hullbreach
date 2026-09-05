@@ -8,8 +8,9 @@ namespace {
 /// Variedades de rocha sorteadas na geracao: poucas malhas, muitas pedras.
 constexpr int kVariedades = 5;
 
-/// Distancia minima entre a nave e uma rocha recem-colocada: sem isso o campo
-/// poderia nascer (ou ressurgir) com uma pedra dentro da cabine.
+/// Distancia minima entre a nave e uma rocha no sorteio inicial: sem isso o
+/// campo poderia nascer com uma pedra dentro da cabine. Vale so para gerar() --
+/// a rocha que reaparece com a viagem em curso entra pela borda, adiante.
 constexpr float kDistanciaSegura = 55.0f;
 
 constexpr float kRaioMinimo = 2.2f;
@@ -28,8 +29,11 @@ float envolver(float distancia, float raio) {
 }  // namespace
 
 Vec3 AsteroidField::sortear(Vec3 centro, float minimo) {
-    // O cubo e grande perto do limite seguro, entao sortear de novo converge
-    // rapido; o teto de tentativas so existe para nao depender de sorte.
+    // Sorteio com recusa. O caso mais apertado e `minimo == raio_`, que so
+    // aceita os cantos do cubo -- e ainda assim aceita 48% dos sorteios, porque
+    // e o que sobra do cubo fora da esfera inscrita nele (1 - pi/6). O teto de
+    // tentativas so existe para nao depender de sorte; a saida dele tambem
+    // respeita o limite, por estar a `raio_` exatos.
     for (int tentativa = 0; tentativa < 16; ++tentativa) {
         const Vec3 deslocamento{rng_.entre(-raio_, raio_), rng_.entre(-raio_, raio_),
                                 rng_.entre(-raio_, raio_)};
@@ -82,8 +86,9 @@ void AsteroidField::centralizar(Vec3 posicao) {
         // voltariam na mesma formacao a cada travessia do cubo (com o Starfield
         // isso passa batido, mas rocha tem forma e a repeticao aparece). Quem
         // atravessa a borda volta sorteada nos eixos que nao viraram -- e
-        // sempre a uma aresta inteira de distancia, dentro da nevoa, entao a
-        // troca acontece longe dos olhos.
+        // sempre a uma aresta inteira de distancia. E por isso que o raio do
+        // cubo tem que ficar alem do alcance nitido do melhor sensor: a troca
+        // acontece dentro da nevoa, longe dos olhos, e nao na cara do jogador.
         //
         // O teste e por magnitude: quem virou andou uma aresta inteira, e o
         // resto e ruido de arredondamento (envolver() soma e subtrai `raio`,
@@ -142,7 +147,12 @@ void AsteroidField::reposicionar(int indice, Vec3 referencia) {
         return;
     }
     Asteroide& rocha = asteroides_[static_cast<std::size_t>(indice)];
-    rocha.posicao = sortear(referencia, kDistanciaSegura);
+    // Uma aresta inteira de distancia, que e de onde vem toda rocha nova: quem
+    // atravessa a borda do cubo reaparece a raio_ dali, e a substituta de uma
+    // pedra atingida precisa entrar pelo mesmo lugar. Sorteada mais perto, ela
+    // se materializava pronta na frente do jogador logo depois da batida --
+    // justo quando ele esta olhando.
+    rocha.posicao = sortear(referencia, raio_);
     rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
     rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
 }

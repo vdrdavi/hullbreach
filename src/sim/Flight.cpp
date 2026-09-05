@@ -13,8 +13,19 @@ constexpr float kTaxaPitch = 0.95f;   // rad/s
 constexpr float kLimitePitch = 1.15f; // rad
 
 // Campo de asteroides: o cubo com wrap e tambem o alcance de desenho.
-constexpr float kRaioCampo = 110.0f;
-constexpr int kQuantidadeRochas = 200;
+//
+// O raio precisa ficar alem do que o melhor sensor mostra sem nevoa (95, veja
+// Flight::kSensorNitidoPorPonto), senao a rocha que entra pela borda do cubo
+// aparece pronta em vez de emergir. Com 170 ela chega a borda ainda 71% na
+// nevoa, e com o sensor no minimo nem e desenhada: nenhuma reparticao ve pedra
+// estalando na tela.
+//
+// A quantidade acompanha o cubo **ao cubo**, e nao e enfeite: a densidade e que
+// decide quantas rochas se cruza por minuto, entao 200 em um cubo de raio 110
+// viram 740 em um de raio 170 (1,88e-5 rocha por unidade cubica nos dois).
+// Aumentar o campo sem isso seria baixar a dificuldade pela porta dos fundos.
+constexpr float kRaioCampo = 170.0f;
+constexpr int kQuantidadeRochas = 740;
 constexpr float kRaioNave = 2.0f;
 
 // Batida: a nave quase para e o baque decai por si.
