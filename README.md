@@ -12,7 +12,7 @@ anda entre os três, a nave segue voando sozinha lá fora. No fim do casco a nav
 toca e o convés pisca em vermelho. Quando o casco acaba, a nave
 se despedaça na vista externa e a viagem termina ali.
 
-![Interior da nave: convés de tiles, janelas para o espaço e o painel de pilotagem com o convite para assumir os controles](docs/interior.png)
+![Interior da nave: o convés de tiles com os três móveis — o painel de pilotagem ao fundo, a bancada de reparo à esquerda e o repartidor de energia à direita, com o convite [E] flutuando sobre ele](docs/interior.png)
 
 ![Voo 3D: o caça low poly triangular entre asteroides, com as estrelas riscando a tela ao redor](docs/voo.png)
 
