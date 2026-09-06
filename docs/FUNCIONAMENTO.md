@@ -877,26 +877,54 @@ jeito que a pedra pequena não faz, porque o que ele compra é justamente o temp
 de decidir.
 
 **Uma em cem parece pouco e não é**, porque a conta que manda é a seção de
-choque, que cresce com o quadrado do raio: uma de raio 20 tem trinta vezes a área
-de travessia de uma de raio 4,85. Medido, dá uma colisão a cada 64 s de voo reto
-— rara o bastante para ser um acontecimento, comum o bastante para o sensor
+choque, que cresce com o quadrado do raio: contando o colisor de cada uma, o
+monólito médio tem **cinco vezes** a área de travessia da rocha comum média.
+Rara o bastante para ser um acontecimento, comum o bastante para o sensor
 importar.
 
-**A malha do monólito não é a mesma em outra escala**, e o motivo é a colisão.
-Ela é uma esfera do raio de desenho, e no icosaedro amassado da rocha comum a
-superfície chega a estar a **0,50** desse raio: uma folga de 3,8 unidades numa
-pedra de 7,5, que ninguém nota. Na escala de um monólito a mesma proporção
-viraria bater a treze unidades de uma pedra visivelmente longe.
+#### A malha do monólito, e por que ela tem colisor próprio
 
-Então `criarMonolitoLowPoly` faz uma malha que **cabe na própria esfera**: o
-icosaedro é subdividido uma vez (20 faces viram 80, e a face plana se aproxima da
-curva) e o amassado é de leve, entre 0,88 e 1,0. Medido, a superfície fica entre
-**0,838 e 1,000** do raio — a folga do maior monólito é 4,2 unidades, contra 3,8
-da maior rocha comum. A pedra grande não é mais injusta que a que já existia.
+A malha não é a mesma em outra escala, e o motivo é a colisão. Ela era sempre a
+esfera **circunscrita** — a malha se normaliza pelo vértice mais distante, e esse
+raio serve de colisor. Funciona enquanto a rocha é pequena: no icosaedro amassado
+da rocha comum a superfície chega a estar a **0,50** do raio, o que vale 3,8
+unidades numa pedra de 7,5 e ninguém nota. Na escala de um monólito a mesma
+proporção vira dano longe da pedra.
+
+A primeira tentativa foi fazer a malha **caber** na esfera: subdividir o
+icosaedro uma vez (20 faces viram 80, e a face plana se aproxima da curva) e
+amassar de leve. A folga ficou ótima — superfície entre 0,838 e 1,000 — e a
+forma, péssima: todas saíam **bolas**. E não por acaso. Espremer uma forma para
+dentro da esfera circunscrita é o mesmo que exigir que ela seja redonda: todo
+eixo que se encurta volta inflado pelo piso, e o alongamento medido ficou em
+1,04–1,11, **mais esférico que as rochas pequenas** (1,17–1,26).
+
+Por isso `Mesh` ganhou um `raioColisao` próprio, em fração da escala de desenho.
+No monólito ele é o raio **médio** da superfície: a esfera passa pelo meio da
+forma em vez de por fora dela, o erro fica dos dois lados e pequeno, e a forma
+fica livre. A rocha comum segue em 1,0 — nesta escala a folga vale menos de
+quatro unidades, e é com esse colisor que a dificuldade inteira foi medida;
+trocá-lo tiraria quase 40% da seção de choque de todas as rochas de uma vez.
+
+**A forma vem do alongamento, não das covas**, e isso sai da geometria: um
+elipsoide cabe bem numa esfera média — os raios variam pouco e suavemente —,
+enquanto uma cova funda muda o raio num ponto só, que é exatamente o que uma
+esfera não representa. Bossas fortes gastavam o orçamento de erro sem mudar o
+contorno; hoje elas são moderadas (±0,2) e quem faz o trabalho da silhueta é a
+escala por eixo.
+
+E o eixo curto é **escolhido**, não sorteado junto com os outros: sorteando os
+três na mesma faixa saíam três parecidos com frequência e a rocha voltava a ser
+bola. Escolhido, toda malha tem uma direção visivelmente mais curta. Medido:
+
+| | alongamento da caixa | erro do colisor (na maior, raio 20) |
+| --- | --- | --- |
+| rocha comum | 1,17 a 1,26 | 3,5 a 3,8 u, só para um lado |
+| monólito | **1,17 a 1,44** | 1,7 a 3,6 u de ponta / 3,2 a 4,7 u de vale |
 
 A subdivisão guarda os pontos médios **por aresta**: sem isso o mesmo ponto
-nasceria duas vezes e o amassado seguinte o moveria de um jeito em cada face,
-abrindo fendas na superfície. E ela vem **antes** do amassado, para os pontos
+nasceria duas vezes e a deformação seguinte o moveria de um jeito em cada face,
+abrindo fendas na superfície. E ela vem **antes** da deformação, para os pontos
 novos nascerem na esfera e serem deslocados junto com o resto.
 
 Custa o mesmo: 3,15 a 3,40 ms de trabalho por quadro em release, contra 3,2 a 3,4

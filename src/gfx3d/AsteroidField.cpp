@@ -30,14 +30,14 @@ constexpr float kRaioMaximo = 7.5f;
 // contagem vira comum na rota. A 1% e uma a cada trinta e poucos segundos de
 // voo reto -- rara o bastante para ser um acontecimento, comum o bastante para
 // o sensor alto valer a pena.
-constexpr float kRaioGrandeMinimo = 14.0f;
-constexpr float kRaioGrandeMaximo = 26.0f;
+constexpr float kRaioGrandeMinimo = 12.0f;
+constexpr float kRaioGrandeMaximo = 20.0f;
 constexpr float kChanceGrande = 0.01f;
 
 /// Quantas malhas de monolito, e onde elas comecam em `malhas_`. Ficam no mesmo
 /// vetor das outras: o indice em Asteroide::malha ja diz qual e qual, e nao ha
 /// segunda lista para manter em dia.
-constexpr int kVariedadesGrandes = 3;
+constexpr int kVariedadesGrandes = 5;
 
 /// Quanto a rocha mais rapida deriva. **Este numero e limitado pela colisao, e
 /// nao pelo gosto.**
@@ -356,7 +356,10 @@ int AsteroidField::colisao(Vec3 posicao, float raio) const {
         if (!rocha.ativa) {
             continue;
         }
-        const float alcance = rocha.raio + raio;
+        // O colisor e o raio de desenho vezes o da malha (veja Mesh). Para a
+        // rocha comum o fator e 1 e nada muda; o monolito e que tem forma
+        // demais para a esfera circunscrita representar.
+        const float alcance = rocha.raio * malhas_[rocha.malha].raioColisao + raio;
         const Vec3 delta = rocha.posicao - posicao;
         if (dot(delta, delta) < alcance * alcance) {
             return static_cast<int>(i);

@@ -213,15 +213,21 @@ para a média em cena continuar na casa das 3300 que o resto do ajuste pressupõ
 Se mexer nas escalas ou no piso da densidade, meça a média em cena junto — é ela,
 e não o total, que é a dificuldade.
 
-Uma em cada cem é um **monólito** (raio 14 a 26, contra 7,5 da maior comum): a
+Uma em cada cem é um **monólito** (raio 12 a 20, contra 7,5 da maior comum): a
 rocha que não se desvia no último segundo, e que dá ao sensor alto um valor que a
-pedra pequena não dá. Ela tem malha própria (`criarMonolitoLowPoly`) e isso é
-pela colisão, não pela aparência — a esfera de colisão é o raio de desenho, e na
-rocha comum a superfície chega a 0,50 dele; nessa escala a mesma folga viraria
-bater a treze unidades de uma pedra visivelmente longe. A malha do monólito é
-subdividida uma vez e amassada de leve, e fica entre 0,838 e 1,0 do raio, então a
-folga dele em unidades é a mesma da maior rocha comum. Se criar outra classe de
-rocha, meça essa folga antes de escolher o tamanho.
+pedra pequena não dá. Ela tem malha própria (`criarMonolitoLowPoly`) e um
+`Mesh::raioColisao` próprio, e isso é pela colisão e não pela aparência. O
+colisor era sempre a esfera **circunscrita**, o que na rocha comum deixa a
+superfície a 0,50 do raio — 3,8 unidades, que ninguém nota; nesta escala vira
+dano longe da pedra. Espremer a forma para dentro da circunscrita, porém, é o
+mesmo que exigir que ela seja redonda: os monólitos saíam mais esféricos que as
+pedras pequenas. Com o colisor no raio **médio** da superfície, o erro fica dos
+dois lados e a forma fica livre. A rocha comum segue em 1,0 de propósito — é com
+esse colisor que a dificuldade foi medida. E a forma vem do **alongamento por
+eixo**, com o eixo curto escolhido e não sorteado, porque um elipsoide cabe bem
+numa esfera média e uma cova funda não: bossa forte gasta o orçamento de erro sem
+mudar o contorno. Se criar outra classe de rocha, meça esse erro antes de
+escolher o tamanho.
 
 E cada rocha tem uma **deriva própria** (`kDerivaMaxima`), com a magnitude
 sorteada ao quadrado para o campo não virar enxame — dois terços das pedras se

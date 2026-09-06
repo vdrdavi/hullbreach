@@ -1,6 +1,7 @@
 #include "gfx3d/Mesh.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <map>
 
 #include "core/Aleatorio.hpp"
@@ -153,16 +154,83 @@ void pintarComoRocha(Mesh& malha, Aleatorio& rng, float claro) {
 
 }  // namespace
 
+/// Uma protuberancia (ou uma cova, com amplitude negativa) larga o bastante
+/// para mudar a silhueta.
+struct Bossa {
+    Vec3 eixo;
+    float amplitude;
+    float largura;
+};
+
 Mesh criarMonolitoLowPoly(Uint32 semente) {
     Mesh rocha = icosaedro();
     Aleatorio rng(semente);
-    // Subdividir **antes** de amassar: os pontos medios nascem na esfera e o
-    // amassado desloca todos juntos, entao a superficie continua fechada.
+    // Subdividir **antes** de deformar: os pontos medios nascem na esfera e a
+    // deformacao desloca todos juntos, entao a superficie continua fechada.
     subdividir(rocha);
-    // Amassado de leve, entre 0,88 e 1,0: e o que mantem a superficie perto da
-    // esfera de colisao. Com a faixa da rocha comum, um monolito bateria muito
-    // antes de encostar.
-    amassar(rocha, rng, 0.88f, 1.0f);
+
+    // Poucas bossas largas, e nao um sorteio por vertice. Amassar vertice a
+    // vertice -- o que a rocha comum faz -- da ruido de **alta frequencia**:
+    // de perto parece granulado, e de longe a silhueta continua sendo um
+    // circulo. O que muda a forma vista e feicao do tamanho da propria rocha,
+    // e e isso que estas sao.
+    Bossa bossas[5];
+    for (Bossa& b : bossas) {
+        b.eixo = normalizar(Vec3{rng.entre(-1.0f, 1.0f), rng.entre(-1.0f, 1.0f),
+                                 rng.entre(-1.0f, 1.0f)});
+        // Amplitude moderada, e o alongamento por eixo e que faz o trabalho
+        // pesado da silhueta. E uma divisao de tarefas que sai da geometria:
+        // um elipsoide cabe bem numa esfera media -- os raios dele variam pouco
+        // e suavemente --, enquanto uma cova funda muda o raio num ponto so e e
+        // exatamente o que uma esfera nao consegue representar. Bossa demais
+        // gastava o orcamento de erro sem mudar o contorno.
+        b.amplitude = rng.entre(-0.2f, 0.2f);
+        // O expoente estreita a bossa: 1 cobre um hemisferio inteiro, 5 e quase
+        // um calo. Sorteado, cada rocha tem umas largas e outras localizadas.
+        b.largura = rng.entre(1.0f, 5.0f);
+    }
+    // Escalas por eixo, e o eixo curto e **escolhido**, nao sorteado junto com
+    // os outros. Sorteando os tres na mesma faixa, saem tres parecidos com
+    // frequencia e a rocha volta a ser uma bola -- foi o que aconteceu na
+    // primeira tentativa, com duas das cinco em 1,05 de alongamento, mais
+    // redondas que as pedras pequenas. Escolhido, toda malha tem uma direcao
+    // visivelmente mais curta que as outras, e o alongamento nunca fica abaixo
+    // de 1,25.
+    float eixos[3] = {1.0f, 1.0f, 1.0f};
+    const int curto = static_cast<int>(rng.proximo() % 3u);
+    eixos[curto] = rng.entre(0.64f, 0.80f);
+    const int medio = (curto + 1 + static_cast<int>(rng.proximo() % 2u)) % 3;
+    eixos[medio] = rng.entre(0.82f, 1.0f);
+    const Vec3 proporcao{eixos[0], eixos[1], eixos[2]};
+
+    for (Vec3& v : rocha.vertices) {
+        const Vec3 direcao = normalizar(v);
+        float raio = 1.0f;
+        for (const Bossa& b : bossas) {
+            const float alinhamento = std::max(0.0f, dot(direcao, b.eixo));
+            raio += b.amplitude * std::pow(alinhamento, b.largura);
+        }
+        v = Vec3{direcao.x * proporcao.x, direcao.y * proporcao.y, direcao.z * proporcao.z} *
+            raio;
+    }
+
+    // Normaliza pelo vertice mais distante, que e a escala de desenho, e mede o
+    // raio **medio** da superficie: e ele que vira o colisor. A esfera passa
+    // pelo meio da forma, entao o erro fica dos dois lados -- atravessa-se um
+    // naco de ponta antes de bater, e bate-se um naco antes de encostar num
+    // vale -- em vez de todo ele de um lado so. Sem isto a forma teria de caber
+    // na esfera circunscrita, e caber nela e ser redonda.
+    float maior = 0.0f;
+    for (const Vec3& v : rocha.vertices) {
+        maior = std::max(maior, comprimento(v));
+    }
+    float soma = 0.0f;
+    for (Vec3& v : rocha.vertices) {
+        v = v * (1.0f / maior);
+        soma += comprimento(v);
+    }
+    rocha.raioColisao = soma / static_cast<float>(rocha.vertices.size());
+
     // Um tom mais claro que o das pequenas: a rocha que nao se desvia por
     // manobra tem de ser reconhecida como outra coisa antes de estar perto.
     pintarComoRocha(rocha, rng, 1.35f);
@@ -173,6 +241,12 @@ Mesh criarMonolitoLowPoly(Uint32 semente) {
 Mesh criarAsteroideLowPoly(Uint32 semente) {
     // Icosaedro: 12 vertices e 20 faces, o menor solido que ainda passa por
     // rocha depois de amassado.
+    //
+    // Fica com `raioColisao` em 1, a esfera circunscrita, e nao com o raio medio
+    // que o monolito usa. Nao e esquecimento: nesta escala a folga vale menos de
+    // quatro unidades, e este e o colisor com que a dificuldade inteira do jogo
+    // foi medida -- trocar por um menor tiraria quase 40% da secao de choque de
+    // todas as rochas do campo de uma vez.
     Mesh rocha = icosaedro();
     Aleatorio rng(semente);
     amassar(rocha, rng, 0.62f, 1.10f);

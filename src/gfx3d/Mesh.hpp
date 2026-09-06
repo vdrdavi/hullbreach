@@ -19,6 +19,22 @@ struct Mesh {
 
     std::vector<Vec3> vertices;
     std::vector<Face> faces;
+
+    /// Raio da esfera que representa esta malha na colisao, em fracao da escala
+    /// de desenho.
+    ///
+    /// Era sempre 1: a malha se normalizava pelo vertice mais distante, e a
+    /// esfera **circunscrita** servia de colisor. Isso funciona enquanto a rocha
+    /// e pequena, porque a folga -- a superficie chega a estar a metade do raio
+    /// -- vale 3,8 unidades numa pedra de 7,5 e ninguem nota.
+    ///
+    /// Na escala de um monolito a mesma proporcao vira dano longe da pedra, e
+    /// espremer a forma para dentro da esfera circunscrita e o mesmo que exigir
+    /// que ela seja uma bola: qualquer eixo que se encurte volta inflado. Com um
+    /// raio proprio, a esfera passa **pelo meio** da superficie em vez de por
+    /// fora dela, e o erro fica dos dois lados e pequeno -- em troca, a forma
+    /// fica livre.
+    float raioColisao{1.0f};
 };
 
 /// Garante que toda face aponte para fora, comparando a normal com a direcao
