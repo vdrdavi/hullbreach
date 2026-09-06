@@ -1,5 +1,6 @@
 #include "gfx3d/AsteroidField.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace jogo {
@@ -155,6 +156,33 @@ int AsteroidField::colisao(Vec3 posicao, float raio) const {
         }
     }
     return -1;
+}
+
+float AsteroidField::distanciaNaRota(Vec3 posicao, Vec3 frente, float corredor,
+                                     float alcance) const {
+    float maisProxima = alcance;
+    for (const Asteroide& rocha : asteroides_) {
+        const Vec3 delta = rocha.posicao - posicao;
+        const float profundidade = dot(delta, frente);
+        // Ate a **superficie**, e nao ate o centro: o que interessa e quando a
+        // pedra encosta. Uma rocha de raio 7 a 20 de profundidade esta a 13 do
+        // casco, e e esse o numero que o aviso tem de dizer.
+        const float distancia = profundidade - rocha.raio;
+        if (profundidade <= 0.0f || distancia >= maisProxima) {
+            continue;
+        }
+        // O afastamento do eixo por Pitagoras sobre o mesmo delta, comparado em
+        // quadrados para nao tirar raiz. Este teste vem **depois** do corte por
+        // distancia de proposito: ele custa mais, e a esmagadora maioria das
+        // milhares de rochas do cubo ja saiu no anterior.
+        const float lateral2 = std::max(0.0f, dot(delta, delta) - profundidade * profundidade);
+        const float largura = rocha.raio + corredor;
+        if (lateral2 > largura * largura) {
+            continue;
+        }
+        maisProxima = std::max(0.0f, distancia);
+    }
+    return maisProxima;
 }
 
 void AsteroidField::reposicionar(int indice, Vec3 referencia) {

@@ -262,6 +262,12 @@ public:
     /// um so, para que luz e som nunca pisquem separados (veja atualizar()).
     float alarme() const { return alarme_; }
 
+    /// O quanto a rocha mais proxima **da rota** ja chegou: 0 com o caminho
+    /// livre, 1 encostando no casco. E o que o sonar do console mede, e o que
+    /// ele mede e limitado pelo sensor -- entao a reparticao de energia decide
+    /// a que distancia o aviso comeca a soar (veja atualizar()).
+    float proximidade() const { return proximidade_; }
+
     const AsteroidField& rochas() const { return rochas_; }
 
 private:
@@ -287,6 +293,10 @@ private:
     float faseAlarme_{0.0f};
     float intensidadeAlarme_{0.0f};
     float alarme_{0.0f};
+    /// O sonar de rota: o quanto a proxima rocha ja chegou, e quanto ja se
+    /// passou desde o ultimo bipe.
+    float proximidade_{0.0f};
+    float relogioSonar_{0.0f};
     bool abafado_{true};
 #ifdef JOGO_DEBUG
     bool invencivel_{false};
@@ -295,6 +305,7 @@ private:
     Audio::SomId somImpacto_{0};
     Audio::SomId somDestruicao_{0};
     Audio::SomId somSirene_{0};
+    Audio::SomId somSonar_{0};
     Audio::VozId vozAmbiente_{0};
     Audio::VozId vozSirene_{0};
 };

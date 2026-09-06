@@ -918,6 +918,19 @@ if (dot(delta, delta) < alcance * alcance) { /* bateu */ }
 E a rocha atingida não some: ela é mandada para outro canto do cubo. O campo
 mantém a mesma densidade sem alocar nem liberar nada.
 
+**A outra pergunta que se faz ao campo é `distanciaNaRota`**, e ela não é a
+colisão com outro nome. A colisão pergunta *o que estou tocando agora*; esta
+pergunta é *o que vou tocar se ninguém mexer em nada*, e a resposta é a distância
+até a superfície da rocha mais próxima **à frente**, dentro de um tubo em torno
+do rumo atual. A pedra que passa de lado está perto sem estar no caminho: contá-la
+seria medir a densidade do campo, não o risco. É daí que sai o sonar (seção 12).
+
+Os dois cortes são feitos na ordem em que custam. Primeiro a profundidade ao
+longo do rumo (`dot(delta, frente)`), que descarta tudo que está atrás ou mais
+longe do que a melhor candidata até aqui; só o que sobra paga o afastamento do
+eixo, por Pitágoras sobre o mesmo `delta` e comparado em quadrados. Das milhares
+de rochas do cubo, a esmagadora maioria sai no primeiro teste.
+
 ---
 
 ### 11.2 Os destroços: quebrar uma malha sem um segundo modelo
@@ -1213,6 +1226,69 @@ importa.
 A fronteira dos 30% é uma só: quem escreve `CRITICO` no diagnóstico (`faixaDo`,
 em `StatusScene.cpp`) lê a mesma `Flight::kCascoCritico`. A sirene não pode estar
 tocando sobre um mostrador que ainda diz `AVARIADO`.
+
+### O sonar de rota
+
+No convés o jogador **não vê o campo**. A parede da nave é opaca, o piloto
+automático segue reto e a próxima rocha chega sem nenhum aviso na tela. O sonar é
+a informação que atravessa esse casco: um bipe cuja **cadência** diz a que
+distância está a pedra — devagar quando ela entra no alcance, quase contínuo
+quando está encostando.
+
+O que ele mede é `Flight::proximidade()`, entre 0 e 1, e mede a rocha **no caminho
+reto à frente**, não a mais próxima em qualquer direção. Isso não é um detalhe de
+implementação: o corredor varrido por `AsteroidField::distanciaNaRota` (seção
+11.1) é exatamente a *previsão do piloto automático*, que é quem está pilotando
+enquanto se anda lá dentro. Por isso o aviso vale o que promete — medindo 30 s de
+piloto automático com o sensor neutro, oito das nove séries de bipes terminaram em
+batida.
+
+**O alcance é o do sensor, como ele está agora** — a mesma rampa `alcance_` que
+regula a névoa da cabine, e não um número próprio do sonar. Duas consequências,
+e as duas são de propósito:
+
+- o console avisa sobre exatamente aquilo que a janela da cabine mostra. Nada
+  bipa fora da névoa, nada aparece na névoa sem bipar;
+- um ponto de energia no sensor compra aviso **nos dois lugares de uma vez**. Com
+  o sensor no mínimo o primeiro bipe soa a 12 unidades, um piscar antes da
+  batida; no máximo, a 95.
+
+A cadência sai de uma interpolação em **razão**, e não em diferença:
+
+```cpp
+intervalo = kIntervaloSonarLonge * pow(kIntervaloSonarPerto / kIntervaloSonarLonge,
+                                       proximidade_);
+```
+
+O ouvido compara intervalos por quociente. Uma rampa linear entre 0,85 s e 0,10 s
+pareceria não acelerar nada durante quase todo o percurso e então disparar de uma
+vez no fim; em razão, a aceleração é uniforme do primeiro bipe ao último.
+
+Dois ajustes finos que o código explica e que valem repetir aqui, porque os dois
+já foram o erro antes de serem o acerto:
+
+**O relógio satura em vez de zerar.** Com a rota livre, `relogioSonar_` continua
+subindo até o intervalo mais longo e para ali. Zerá-lo atrasaria o primeiro bipe
+em até 0,85 s depois de a rocha entrar no alcance — justamente o atraso que um
+aviso não pode ter. Saturado, ele dispara no mesmo passo da entrada.
+
+**A largura do corredor é o ajuste que decide tudo.** São três unidades de folga
+além do contato (o tubo tem raio de 7,2 a 12,5, contra os 4,2 a 9,5 da colisão de
+fato). Com oito, o sonar soava 58% do tempo em séries de até 28 bipes — isso é a
+densidade do campo, não o risco, e um chiado desses deixa de ser escutado depois
+do primeiro minuto. Com três são 32% do tempo, em séries de 4 a 10 bipes, uma a
+cada 3,3 s: **o silêncio volta a ser a regra e o bipe volta a ser acontecimento.**
+
+Ao contrário do ambiente e da sirene, o sonar **não é uma voz em loop com o ganho
+aberto e fechado**: cada bipe é uma reprodução própria (`Audio::tocar`). Tem de
+ser, porque o que ele informa é o *intervalo* entre eles — um loop teria a
+cadência gravada no WAV, e aí ela seria uma só. O WAV é apenas o timbre: 60 ms de
+seno a 1480 Hz, bem acima da sirene de 620 Hz e de suas parciais, porque os dois
+soam juntos quando a viagem vai mal e precisam continuar sendo **dois** avisos.
+
+O ganho também acompanha a proximidade (0,5 a 1,0), o que dá uma segunda
+dimensão de graça; e uma nave já perdida se cala junto com o resto, pelo mesmo
+`destruida()` do ambiente e da sirene.
 
 ---
 

@@ -183,6 +183,12 @@ void desenharNave(Coluna& coluna, Flight* voo) {
                                 static_cast<double>(Flight::segundosDeAvisoDe(energia)),
                                 static_cast<double>(voo->alcanceDoSensor()),
                                 static_cast<double>(voo->alcanceVisivel())));
+    // O sonar nao tem manifestacao visual nenhuma -- e so cadencia de bipe --,
+    // entao este e o unico lugar em que da para conferir se ele esta medindo a
+    // rota e nao o campo todo: voando para o vazio tem de cair a zero.
+    coluna.campo("sonar", texto("%.2f  (livre %.0f u)", static_cast<double>(voo->proximidade()),
+                                static_cast<double>(voo->alcanceDoSensor() *
+                                                    (1.0f - voo->proximidade()))));
 
     const Flight::Pose& pose = voo->pose();
     coluna.campo("posicao", texto("%.0f %.0f %.0f", static_cast<double>(pose.posicao.x),

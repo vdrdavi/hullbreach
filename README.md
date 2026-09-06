@@ -8,7 +8,9 @@ que acontecem enquanto você anda lá dentro — e a repartição de energia, on
 decide quanto do motor, do sensor e da blindagem a nave vai ter: a soma é fixa,
 então toda vantagem sai do risco de outro lugar. No canto oposto do convés há uma
 bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
-lá dentro, a nave segue voando sozinha lá fora. No fim do casco a nave passa a avisar: a sirene
+lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a
+parede é o **sonar de rota**, um bipe que aperta a cadência conforme a próxima
+rocha se aproxima. No fim do casco a nave passa a avisar: a sirene
 toca e o convés pisca em vermelho. Quando o casco acaba, a nave
 se despedaça na vista externa e a viagem termina ali.
 
@@ -234,6 +236,14 @@ o ganho da voz **e** acende a luz vermelha do convés. É um número só de
 propósito — gravada no arquivo, a sirene andaria pelo relógio do dispositivo de
 áudio enquanto a luz anda pelo passo fixo, e as duas sairiam do compasso em
 poucos minutos.
+
+O **sonar de rota** é o terceiro som da viagem, e o único que informa pela
+cadência: um bipe curto que se repete a cada 0,85 s quando a rocha entra no
+alcance e a cada 0,10 s quando ela está encostando. Por isso ele não é uma voz em
+*loop* como os outros dois — um loop teria a cadência gravada no arquivo, e aí
+seria uma só. Ele mede a pedra **no caminho reto à frente**, não a mais próxima
+em qualquer direção, e enxerga só até onde o sensor da nave alcança: repartir
+energia para o sensor compra aviso na cabine e no convés de uma vez.
 
 O WAV do ambiente é gerado em `tools/gen_assets.py` por um integrador com
 vazamento rodado **em círculo**: uma passada só para aquecer o estado e outra

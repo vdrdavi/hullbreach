@@ -210,6 +210,18 @@ no WAV, senão o som passa a andar pelo relógio do dispositivo de áudio e sai 
 compasso da luz, que anda pelo passo fixo. `kCascoCritico` também é a fronteira
 do `CRITICO` do diagnóstico — é uma só de propósito.
 
+**O sonar de rota** é o aviso que atravessa o casco: no convés o jogador não vê o
+campo, e o que ele ouve é um bipe cuja **cadência** aperta conforme a rocha chega
+(`Flight::proximidade`). Ele mede a pedra no caminho reto à frente
+(`AsteroidField::distanciaNaRota`), e não a mais próxima em qualquer direção — o
+corredor varrido é a previsão do piloto automático, que é quem pilota enquanto se
+anda lá dentro. O alcance é o do sensor **como ele está agora**, a mesma rampa da
+névoa: o console avisa exatamente sobre o que a janela da cabine mostra, e um
+ponto de energia no sensor compra aviso nos dois lugares. Ao contrário do ambiente
+e da sirene não é voz em loop — cada bipe é um `tocar`, porque o que informa é o
+intervalo entre eles. A largura do corredor é o ajuste sensível: alargá-la faz o
+sonar medir a densidade do campo em vez do risco e virar chiado.
+
 ## Dependências
 
 **Só SDL3 ≥ 3.4.** O SDL 3.4 traz `SDL_LoadPNG` e `SDL_LoadWAV` no core, o texto

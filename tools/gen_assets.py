@@ -457,6 +457,12 @@ def main() -> None:
     # A solda que nao pegou: mais grave e mais longa que o "voltar", porque na
     # bancada os dois sons acontecem lado a lado e precisam se distinguir.
     gerar_wav("falha.wav", 165.0, 0.22)
+    # O bipe do sonar de rota. Senoidal e bem mais agudo que a sirene do casco
+    # (620 Hz e suas parciais), porque os dois soam juntos quando a viagem vai
+    # mal e precisam continuar sendo dois avisos, e nao uma mistura. O que ele
+    # diz nao esta no arquivo: quem informa a distancia e a **cadencia**, que o
+    # Flight aperta conforme a rocha chega (veja Flight::proximidade).
+    gerar_wav("sonar.wav", 1480.0, 0.06, "seno")
     gerar_ambiente("espaco.wav")
     gerar_sirene("sirene.wav")
     gerar_impacto("impacto.wav")

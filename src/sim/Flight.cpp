@@ -59,6 +59,26 @@ constexpr float kTaxaAlarme = 2.5f;    // 1/s, entrada e saida do alarme
 constexpr float kGanhoSirene = 0.55f;
 constexpr float kTau = 6.283185307f;
 
+// O sonar de rota: a rocha que o piloto automatico vai acertar, dita em bipes.
+//
+// A folga e somada ao raio da nave e ao da rocha, entao o tubo varrido tem de
+// 7,2 a 12,5 unidades de raio, contra os 4,2 a 9,5 em que a colisao acontece de
+// fato. Sao tres unidades de margem, e essa largura e o ajuste que decide se
+// isto e um aviso ou um chiado. Medindo 30 s de piloto automatico com o sensor
+// neutro: com uma folga de 8 o sonar soava 58% do tempo, em series de ate 28
+// bipes -- isso e a densidade do campo, e nao o risco, e ninguem escuta um
+// chiado desses depois do primeiro minuto. Com 3 sao 32% do tempo, em series de
+// 4 a 10 bipes, uma a cada 3,3 s, e **8 das 9 series terminaram em batida**: o
+// silencio volta a ser a regra e o bipe passa a valer o que promete.
+constexpr float kCorredorSonar = 3.0f;
+// Os extremos da cadencia. Interpolados em razao, e nao em diferenca: o ouvido
+// compara intervalos por quociente, e uma rampa linear entre 0,85 s e 0,10 s
+// pareceria nao acelerar nada ate o fim e entao disparar de uma vez.
+constexpr float kIntervaloSonarLonge = 0.85f;  // s, na borda do sensor
+constexpr float kIntervaloSonarPerto = 0.10f;  // s, com a rocha encostando
+constexpr float kGanhoSonarLonge = 0.5f;
+constexpr float kGanhoSonarPerto = 1.0f;
+
 /// Suavizacao exponencial estavel em passo fixo.
 float aproximar(float atual, float alvo, float taxa, float dt) {
     return atual + (alvo - atual) * (1.0f - std::exp(-taxa * dt));
@@ -101,6 +121,14 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     alarme_ = 0.0f;
     somSirene_ = ctx.audio.carregar("audio/sirene.wav");
     vozSirene_ = ctx.audio.tocarEmLoop(somSirene_, 0.0f);
+
+    // O sonar, ao contrario dos dois, nao e uma voz em loop com o ganho aberto
+    // e fechado: cada bipe e uma reproducao propria, porque o que ele informa e
+    // o **intervalo** entre eles. Um loop teria de ter a cadencia gravada, e ai
+    // ela seria uma so.
+    proximidade_ = 0.0f;
+    relogioSonar_ = 0.0f;
+    somSonar_ = ctx.audio.carregar("audio/sonar.wav");
 }
 
 void Flight::encerrar(Context& ctx) {
@@ -222,6 +250,37 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     intensidadeAlarme_ = aproximar(intensidadeAlarme_, critico() ? 1.0f : 0.0f, kTaxaAlarme, dt);
     alarme_ = intensidadeAlarme_ * (0.5f - 0.5f * std::cos(faseAlarme_));
     ctx.audio.ajustarGanho(vozSirene_, alarme_ * kGanhoSirene);
+
+    // O sonar de rota, que e o unico aviso que atravessa o casco: no conves o
+    // jogador nao ve o campo, e o que ele ouve e a proxima rocha se aproximando.
+    //
+    // O que se mede e a pedra **no caminho reto a frente**, e nao a mais
+    // proxima em qualquer direcao: a que passa de lado esta perto sem ser
+    // ameaca. O corredor varrido e, portanto, a previsao do piloto automatico
+    // -- que e exatamente quem esta pilotando enquanto se anda la dentro.
+    //
+    // O alcance e o do sensor **como ele esta agora**, a mesma rampa da nevoa,
+    // e nao um numero proprio. Assim o console avisa sobre exatamente aquilo
+    // que a janela da cabine mostra, e um ponto de energia no sensor compra
+    // aviso nos dois lugares de uma vez: no minimo o primeiro bipe soa a 12
+    // unidades, um piscar antes da batida; no maximo, a 95.
+    const float livre = rochas_.distanciaNaRota(pose_.posicao, rotacaoDe(pose_).frente(),
+                                                kRaioNave + kCorredorSonar, alcance_);
+    proximidade_ = destruida() ? 0.0f : 1.0f - livre / alcance_;
+    // O relogio **satura** no intervalo mais longo em vez de zerar com a rota
+    // livre: assim a rocha que entra no alcance dispara o bipe no mesmo passo,
+    // e nao ate 0,85 s depois -- justo o atraso que um aviso nao pode ter.
+    relogioSonar_ = std::min(relogioSonar_ + dt, kIntervaloSonarLonge);
+    if (proximidade_ > 0.0f) {
+        const float intervalo =
+            kIntervaloSonarLonge *
+            std::pow(kIntervaloSonarPerto / kIntervaloSonarLonge, proximidade_);
+        if (relogioSonar_ >= intervalo) {
+            relogioSonar_ = 0.0f;
+            ctx.audio.tocar(somSonar_, kGanhoSonarLonge + (kGanhoSonarPerto - kGanhoSonarLonge) *
+                                                              proximidade_);
+        }
+    }
 }
 
 void Flight::reparar(float quanto) {

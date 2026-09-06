@@ -42,6 +42,17 @@ public:
     /// Indice da primeira rocha que encosta na esfera dada, ou -1.
     int colisao(Vec3 posicao, float raio) const;
 
+    /// Distancia ate a superficie da rocha mais proxima **na rota reta a
+    /// frente**, medida pela profundidade ao longo de `frente`. So conta quem
+    /// estiver dentro do tubo de raio `corredor` mais o raio da propria rocha:
+    /// a pedra que passa de lado esta perto, mas nao esta no caminho, e um
+    /// medidor que a contasse mediria a densidade do campo em vez do risco.
+    ///
+    /// Devolve `alcance` quando o tubo esta vazio -- o "nada a vista" e o
+    /// proprio limite, e nao um sentinela que quem chama tenha de testar -- e
+    /// nunca menos que zero.
+    float distanciaNaRota(Vec3 posicao, Vec3 frente, float corredor, float alcance) const;
+
     /// Manda a rocha para outro canto do cubo, longe de `referencia`. E o que
     /// sobra de uma rocha atingida: o campo nunca perde nem ganha pedras.
     void reposicionar(int indice, Vec3 referencia);
