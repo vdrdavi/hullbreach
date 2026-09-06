@@ -168,16 +168,20 @@ public:
     /// ser de graca e passa a ser uma decisao sobre **quando** correr.
     ///
     /// Os numeros se lem juntos e sao a troca inteira: o tanque cheio da
-    /// **cinco segundos** de turbo e leva **quinze** para se refazer do vazio.
-    /// Tres segundos de espera por segundo de motor aberto.
+    /// **cinco segundos** de turbo e leva **quarenta e cinco** para se refazer
+    /// do vazio. Nove segundos de espera por segundo de motor aberto.
+    ///
+    /// Nessa proporcao o turbo nao e mais um jeito de viajar, e sim uma carta
+    /// que se joga: cinco segundos corridos custam a viagem inteira de espera,
+    /// e quem gastar o tanque assim vai passar a maior parte do voo sem ele.
     static constexpr float kConsumoTurbo = 0.2f;  // tanque por segundo
     /// Quantos segundos o tanque cheio da, e quantos ele leva para encher.
     static constexpr float kSegundosDeTurbo = 1.0f / kConsumoTurbo;
-    static constexpr float kSegundosParaEncher = 15.0f;
+    static constexpr float kSegundosParaEncher = 45.0f;
     static constexpr float kRecargaTurbo = 1.0f / kSegundosParaEncher;
     /// **Zerar o tanque superaquece o motor**, e dai ele nao volta a abrir ao
     /// primeiro pingo de recarga: exige uma **divisao inteira** do medidor de
-    /// volta -- um segundo de turbo, tres de espera.
+    /// volta -- um segundo de turbo, nove de espera.
     ///
     /// Sem esta trava o recurso tinha um furo grande: com o tanque no zero,
     /// soltar e apertar de novo devolvia o turbo a cada quadro, e a nave ficava

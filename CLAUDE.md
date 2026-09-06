@@ -106,7 +106,9 @@ interior sempre sobrevive à cabine.
 
 **O turbo é escasso.** Ele sai de um tanque (`Flight::reservaTurbo`) que o uso
 esvazia e que se refaz sozinho enquanto o motor está fechado: cinco segundos de
-turbo, quinze para encher do vazio — três de espera por segundo de motor aberto.
+turbo, quarenta e cinco para encher do vazio — nove de espera por segundo de
+motor aberto. Nessa proporção o turbo não é um jeito de viajar e sim uma carta
+que se joga: cinco segundos corridos custam quase um minuto de espera.
 
 **Zerar o tanque superaquece o motor** (`Flight::superaquecido`), e ele só reabre
 com uma divisão inteira do medidor de volta (`kReligarTurbo`) — não com o

@@ -1240,13 +1240,13 @@ Três números, e eles são a troca inteira:
 | constante | valor | o que significa |
 | --- | --- | --- |
 | `kConsumoTurbo` | 0,2 tanque/s | o tanque cheio dá **cinco segundos** de turbo |
-| `kSegundosParaEncher` | 15 s | do vazio ao cheio — **três segundos de espera por segundo de motor aberto** |
+| `kSegundosParaEncher` | 45 s | do vazio ao cheio — **nove segundos de espera por segundo de motor aberto** |
 | `kReligarTurbo` | 0,2 tanque | zerar o tanque **superaquece** o motor, e ele só reabre com uma divisão inteira de volta |
 
 #### O superaquecimento
 
 Zerar o tanque não deixa o turbo "quase disponível": tranca o motor até a recarga
-devolver **uma divisão inteira** do medidor — um segundo de turbo, três de espera.
+devolver **uma divisão inteira** do medidor — um segundo de turbo, nove de espera.
 
 Sem essa trava o recurso tinha um furo grande, e ele não aparecia na média. Com o
 tanque no zero, soltar e apertar de novo devolvia turbo a cada quadro, e a nave
@@ -1259,17 +1259,19 @@ Medido com um piloto de teste que segura a tecla o tempo todo, o ciclo estabiliz
 exatamente onde deve:
 
 ```
-t= 0,02  tanque 5,00 s  motor ABERTO
+t= 0,02  tanque 4,98 s  motor ABERTO
 t= 5,03  tanque 0,00 s  SUPERAQUECIDO      <- gastou os cinco segundos
-t= 8,05  tanque 0,99 s  motor ABERTO       <- três segundos depois, uma divisão
-t= 9,07  tanque 0,00 s  SUPERAQUECIDO
-t=12,08  tanque 0,99 s  motor ABERTO
+t=14,05  tanque 0,99 s  motor ABERTO       <- nove segundos depois, uma divisão
+t=15,07  tanque 0,00 s  SUPERAQUECIDO
+t=24,08  tanque 0,99 s  motor ABERTO
+t=25,10  tanque 0,00 s  SUPERAQUECIDO
+t=34,12  tanque 0,99 s  motor ABERTO
 ```
 
-Ciclo de 4,03 s: **1,02 s de motor aberto para 3,01 s de espera**, os 25% que as
-duas taxas prometem. E pulsar deixou de compensar — no mesmo teste, alternar a
-tecla a cada quadro rendeu 26,8% do tempo com o motor aberto contra 37,9% de
-quem simplesmente a segurou.
+Ciclo de 10,03 s: **1,02 s de motor aberto para 9,01 s de espera**, repetido sem
+desvio de um centésimo entre ciclos — 9,9% do tempo com o motor aberto, os 10%
+que as duas taxas prometem. E pulsar continua não compensando: alternar a tecla a
+cada quadro rendeu 7,8%, menos que simplesmente segurá-la.
 
 O limiar vale **uma divisão** porque é a unidade que o medidor já desenhava: a
 regra fica visível na barra, sem precisar de texto explicando. Com o motor
