@@ -8,11 +8,13 @@ campo tem bolsões e veios, a viagem alterna vazio e aperto, as pedras derivam
 que não se contorna no último segundo: ou você decidiu cedo, ou bateu. O mesmo
 painel também abre o diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
 inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
-turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da
-blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de
-outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco segundos e leva
-quarenta e cinco para se refazer, e esgotá-lo superaquece o motor — que só volta
-a abrir depois de esfriar o bastante para render um segundo inteiro. E ele **vai
+turbo; e a repartição de energia, onde se decide quanto do motor, do turbo, do
+sensor e da blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do
+risco de outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco
+segundos e leva quarenta e cinco para se refazer, e esgotá-lo superaquece o motor
+— que só volta a abrir depois de esfriar o bastante para render um segundo
+inteiro. Quanto ele puxa e quantos segundos dura são o mesmo ponto de energia,
+que vai de um empurrão de dois segundos a um de nove. E ele **vai
 perdendo força junto com a carga**, então a nave murcha debaixo da sua mão em vez
 de fechar o motor de uma vez: é assim que o turbo conta quanto ainda tem sem você
 precisar atravessar a nave para ler o medidor. Correr

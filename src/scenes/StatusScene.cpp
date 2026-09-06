@@ -195,7 +195,7 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     ctx.fonte.desenhar(ctx.renderer, "TURBO", trilho.x, y, kCorApagada, 1.0f);
     char tanque[32];
     std::snprintf(tanque, sizeof(tanque), "%.1f s",
-                  static_cast<double>(voo_.reservaTurbo() * Flight::kSegundosDeTurbo));
+                  static_cast<double>(voo_.reservaTurbo() * voo_.segundosDeTurbo()));
     const SDL_FPoint medidaTanque = ctx.fonte.medir(tanque, 1.0f);
     ctx.fonte.desenhar(ctx.renderer, tanque, trilho.x + trilho.w - medidaTanque.x, y, corTurbo,
                        1.0f);
@@ -208,11 +208,15 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
         SDL_FRect{trilhoTurbo.x, trilhoTurbo.y, trilhoTurbo.w * voo_.reservaTurbo(),
                   trilhoTurbo.h},
         corTurbo);
-    // Uma marca por segundo, para o medidor dizer em que unidade ele fala: sao
-    // cinco divisoes e o numero ao lado esta em segundos, entao meia barra se le
-    // como "dois segundos e meio" sem ninguem precisar contar.
-    for (int marca = 1; marca < static_cast<int>(Flight::kSegundosDeTurbo); ++marca) {
-        const float fracao = static_cast<float>(marca) / Flight::kSegundosDeTurbo;
+    // Uma marca por segundo, para o medidor dizer em que unidade ele fala: o
+    // numero ao lado esta em segundos, entao meia barra se le como "metade dos
+    // segundos que ali dizem" sem ninguem precisar contar. Quantas divisoes ha e
+    // o ponto de energia do turbo que decide -- de duas a nove --, e e por isso
+    // que a barra **muda de escala** quando se reparte energia: ela nao mede
+    // carga, mede tempo de motor aberto.
+    const float segundos = voo_.segundosDeTurbo();
+    for (int marca = 1; marca < static_cast<int>(segundos); ++marca) {
+        const float fracao = static_cast<float>(marca) / segundos;
         // A primeira marca e o limiar do religamento, e com o motor quente ela
         // deixa de ser escala e vira **alvo**: acesa, ela mostra onde a barra
         // precisa chegar. E por isso que o limiar vale uma divisao inteira --

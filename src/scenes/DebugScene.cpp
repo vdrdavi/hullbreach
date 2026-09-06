@@ -181,16 +181,16 @@ void desenharNave(Coluna& coluna, Flight* voo) {
     coluna.campo("turbo",
                  texto("%.3f  (%.1f s)  forca %.2f%s",
                        static_cast<double>(voo->reservaTurbo()),
-                       static_cast<double>(voo->reservaTurbo() * Flight::kSegundosDeTurbo),
+                       static_cast<double>(voo->reservaTurbo() * voo->segundosDeTurbo()),
                        static_cast<double>(voo->forcaDoTurbo()),
                        voo->superaquecido() ? "  SUPERAQUECIDO" : ""),
                  voo->superaquecido() ? kCorAlerta : kCorValor);
     // A reparticao e o segundo lugar em que se olha quando a nave parece outra:
-    // motor, sensor, casco e o que sobrou na reserva, mais os segundos de aviso
-    // que os dois primeiros produzem juntos.
+    // motor, turbo, sensor, casco e o que sobrou na reserva, mais os segundos de
+    // aviso que o motor e o sensor produzem juntos.
     const Flight::Reparticao& energia = voo->energia();
-    coluna.campo("energia", texto("M%d S%d C%d  (reserva %d)", energia.motor, energia.sensor,
-                                  energia.casco, voo->reserva()));
+    coluna.campo("energia", texto("M%d T%d S%d C%d  (reserva %d)", energia.motor, energia.turbo,
+                                  energia.sensor, energia.casco, voo->reserva()));
     coluna.campo("aviso", texto("%.2f s  (nitido %.0f, ve %.0f)",
                                 static_cast<double>(Flight::segundosDeAvisoDe(energia)),
                                 static_cast<double>(voo->alcanceDoSensor()),

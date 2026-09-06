@@ -39,19 +39,21 @@ public:
         float roll{0.0f};
     };
 
-    /// A energia da nave e uma so, e se reparte entre tres sistemas: motor,
-    /// sensor e casco. A soma e fixa, entao aqui nao se melhora nada -- so se
-    /// decide de onde tirar, e nao existe reparticao certa, existe reparticao
-    /// adequada ao momento.
+    /// A energia da nave e uma so, e se reparte entre quatro sistemas: motor,
+    /// turbo, sensor e casco. A soma e fixa, entao aqui nao se melhora nada --
+    /// so se decide de onde tirar, e nao existe reparticao certa, existe
+    /// reparticao adequada ao momento.
     ///
     /// O minimo de 1 nao e detalhe: sensor zerado seria voar cego, o que nao e
-    /// risco e sim injustica, e motor zerado seria uma nave parada. O teto de 4
-    /// e o que faz o extremo custar os outros dois -- por o motor no talo
-    /// obriga sensor e casco a ficarem no minimo.
+    /// risco e sim injustica, motor zerado seria uma nave parada e turbo zerado
+    /// seria uma tecla que nao faz nada. O teto de 4 e o que faz o extremo
+    /// custar os outros: por um sistema no talo deixa apenas um ponto solto
+    /// para os outros tres, que ficam em 2, 1 e 1.
     static constexpr int kPontoMinimo = 1;
     static constexpr int kPontoMaximo = 4;
     static constexpr int kPontoNeutro = 2;
-    static constexpr int kPontosDeEnergia = 3 * kPontoNeutro;
+    static constexpr int kSistemasDeEnergia = 4;
+    static constexpr int kPontosDeEnergia = kSistemasDeEnergia * kPontoNeutro;
 
     /// Onde cada ponto de energia esta. O que sobrar para kPontosDeEnergia e a
     /// reserva: energia parada, que nao alimenta sistema nenhum. Sair do painel
@@ -59,6 +61,12 @@ public:
     /// avisa, e quem decide e o jogador.
     struct Reparticao {
         int motor{kPontoNeutro};
+        /// O turbo e uma reparticao **dentro** da reparticao: o motor da a
+        /// velocidade que a nave mantem, e este ponto diz quanto ela consegue
+        /// puxar acima disso e por quanto tempo. Sao dois gastos diferentes da
+        /// mesma energia -- viajar depressa o tempo todo, ou viajar devagar e
+        /// ter como atravessar um trecho ruim.
+        int turbo{kPontoNeutro};
         int sensor{kPontoNeutro};
         int casco{kPontoNeutro};
     };
@@ -72,24 +80,32 @@ public:
     /// rocha. Nao e coincidencia: e o que mantem valido todo o ajuste que ja
     /// tinha sido feito antes de a energia se repartir.
     ///
-    /// **O degrau de baixo e o maior dos tres, de proposito.** Deixar um sistema
+    /// **O degrau de baixo e o maior de todos, de proposito.** Deixar um sistema
     /// no minimo tem que ser uma perda que se sente no primeiro segundo, senao a
     /// reparticao vira decoracao: o jogador poria tudo em 1 e um so em 4 sem
     /// nada doer. Por isso as tabelas nao sobem em passos iguais -- do 1 para o
     /// 2 se paga caro, e dai para cima o ganho e mais modesto.
     static constexpr float kCruzeiroPorPonto[kPontoMaximo + 1] = {30.0f, 30.0f, 62.0f, 82.0f,
                                                                   100.0f};
-    /// O turbo nao acompanha o cruzeiro na mesma proporcao, e o motivo e o passo
-    /// fixo: a 240 u/s a nave anda 4,0 unidades por passo, e a menor colisao
-    /// possivel e 4,2 (raio 2,0 da nave mais 2,2 da menor rocha). Acima disso
-    /// ela comecaria a atravessar pedra sem nunca encostar nela.
+    /// **Quanto o turbo puxa acima do cruzeiro**, indexado pelos pontos do
+    /// turbo -- e nao pelos do motor. O motor decide de onde a rampa sai; este
+    /// numero, ate onde ela vai. Somados, sao a velocidade com o motor aberto.
+    ///
+    /// O teto da soma e o passo fixo, e nao o gosto: a 240 u/s a nave anda 4,0
+    /// unidades por passo, e a menor colisao possivel e 4,2 (raio 2,0 da nave
+    /// mais 2,2 da menor rocha). Acima disso ela comecaria a atravessar pedra
+    /// sem nunca encostar nela.
     ///
     /// O que conta e a velocidade **relativa**, e desde que as rochas derivam
     /// (AsteroidField::kDerivaMaxima) parte da folga e delas: 4,2 por passo dao
     /// 252 u/s de relativa, este teto usa 240 e a rocha mais rapida vindo de
-    /// frente usa mais 6. Mexer em um dos dois numeros e mexer no outro.
-    static constexpr float kTurboPorPonto[kPontoMaximo + 1] = {95.0f, 95.0f, 185.0f, 215.0f,
-                                                               240.0f};
+    /// frente usa mais 6. Mexer em um dos dois numeros e mexer no outro. Quem
+    /// confere que nenhuma reparticao possivel passa disso e o static_assert
+    /// logo abaixo da classe -- a conta agora tem duas tabelas dentro, e ela
+    /// nao pode depender de alguem refaze-la na cabeca.
+    static constexpr float kVelocidadeMaximaSegura = 240.0f;
+    static constexpr float kGanhoTurboPorPonto[kPontoMaximo + 1] = {45.0f, 45.0f, 123.0f, 150.0f,
+                                                                    172.0f};
     /// O sensor e uma **janela de visao**, e nao um so numero: o par abaixo e o
     /// inicio e o fim da nevoa da FlightScene. Ate o primeiro a rocha aparece
     /// como ela e; do primeiro ao segundo ela vai virando a cor do fundo; alem
@@ -137,8 +153,12 @@ public:
     static constexpr float velocidadeDeCruzeiroDe(int pontos) {
         return kCruzeiroPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
     }
-    static constexpr float velocidadeDeTurboDe(int pontos) {
-        return kTurboPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    /// A velocidade com o motor aberto: o cruzeiro do motor mais o ganho que o
+    /// turbo compra. E o **teto**; o que a nave alcanca de fato depende ainda
+    /// da carga do tanque (veja forcaDoTurbo).
+    static constexpr float velocidadeDeTurboDe(int motor, int turbo) {
+        return velocidadeDeCruzeiroDe(motor) +
+               kGanhoTurboPorPonto[static_cast<std::size_t>(pontosValidos(turbo))];
     }
     /// Ate onde a rocha aparece sem nevoa nenhuma. E o numero acionavel -- o
     /// que o painel mostra e de onde saem os segundos de aviso --, porque e a
@@ -172,21 +192,30 @@ public:
     /// recompoe sozinho, devagar, quando o motor esta fechado. Correr deixa de
     /// ser de graca e passa a ser uma decisao sobre **quando** correr.
     ///
-    /// Os numeros se lem juntos e sao a troca inteira: o tanque cheio da
-    /// **cinco segundos** de turbo e leva **quarenta e cinco** para se refazer
-    /// do vazio. Nove segundos de espera por segundo de motor aberto.
+    /// **Quanto tanque ha e o ponto de energia do turbo que decide**, e este e o
+    /// segundo lado do mesmo ponto: ele compra forca (kGanhoTurboPorPonto) e
+    /// duracao. Com o turbo no neutro sao os **cinco segundos** de sempre; no
+    /// minimo, dois; no talo, nove.
     ///
-    /// Nessa proporcao o turbo nao e mais um jeito de viajar, e sim uma carta
-    /// que se joga: cinco segundos corridos custam a viagem inteira de espera,
-    /// e quem gastar o tanque assim vai passar a maior parte do voo sem ele.
-    static constexpr float kConsumoTurbo = 0.2f;  // tanque por segundo
-    /// Quantos segundos o tanque cheio da, e quantos ele leva para encher.
-    static constexpr float kSegundosDeTurbo = 1.0f / kConsumoTurbo;
+    /// O tempo de encher **nao** acompanha, e e de proposito: quarenta e cinco
+    /// segundos do vazio ao cheio em qualquer reparticao. Entao o ponto compra
+    /// tambem a proporcao entre correr e esperar, que vai de vinte e dois
+    /// segundos e meio de espera por segundo de motor aberto (turbo 1) a cinco
+    /// (turbo 4) -- no minimo o turbo e um susto que se da uma vez por trecho, e
+    /// no talo e uma ferramenta de que se lanca mao com alguma regularidade.
+    static constexpr float kSegundosDeTurboPorPonto[kPontoMaximo + 1] = {2.0f, 2.0f, 5.0f, 7.0f,
+                                                                         9.0f};
     static constexpr float kSegundosParaEncher = 45.0f;
     static constexpr float kRecargaTurbo = 1.0f / kSegundosParaEncher;
+    /// Quantos segundos o tanque cheio da com estes pontos, e quanto dele um
+    /// segundo de motor aberto gasta.
+    static constexpr float segundosDeTurboDe(int pontos) {
+        return kSegundosDeTurboPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
+    static constexpr float consumoDeTurboDe(int pontos) { return 1.0f / segundosDeTurboDe(pontos); }
     /// **Zerar o tanque superaquece o motor**, e dai ele nao volta a abrir ao
     /// primeiro pingo de recarga: exige uma **divisao inteira** do medidor de
-    /// volta -- um segundo de turbo, nove de espera.
+    /// volta -- um segundo de turbo, que com o tanque neutro sao nove de espera.
     ///
     /// Sem esta trava o recurso tinha um furo grande: com o tanque no zero,
     /// soltar e apertar de novo devolvia o turbo a cada quadro, e a nave ficava
@@ -195,11 +224,15 @@ public:
     /// hora** -- e era essa escolha, e nao a media, que fazia o turbo escasso.
     ///
     /// O limiar e uma divisao porque e a unidade que o medidor ja desenha: a
-    /// regra fica visivel na barra, sem precisar de texto explicando.
-    static constexpr float kReligarTurbo = 1.0f / kSegundosDeTurbo;
+    /// regra fica visivel na barra, sem precisar de texto explicando. A divisao
+    /// vale sempre um segundo de turbo, entao o que ela custa em tempo sai da
+    /// mesma conta de tudo o mais: 45 s dividido pelo tanque -- 22,5 s de espera
+    /// com o turbo no minimo, 5 s no talo. Quem tem tanque grande espera menos
+    /// para voltar a correr, e nao mais.
+    static constexpr float religarTurboDe(int pontos) { return consumoDeTurboDe(pontos); }
     /// **O turbo perde forca junto com a carga.** O tanque nao entrega os mesmos
     /// 185 u/s do primeiro ao ultimo segundo: o ganho sobre o cruzeiro e
-    /// multiplicado por uma forca que cai com a reserva, entre este piso (tanque
+    /// multiplicado por uma forca que cai com a reserva, entre um piso (tanque
     /// no fim) e 1 (tanque cheio).
     ///
     /// Isso resolve, de graca, o problema de o medidor morar em outra tela: com
@@ -209,9 +242,15 @@ public:
     ///
     /// O piso existe para o resto do tanque nao virar lixo. Sem ele a forca
     /// tenderia a zero junto com a reserva, e os ultimos goles nao valeriam o
-    /// aperto do botao -- o tanque teria, na pratica, encolhido. Com 0,35 o
-    /// ultimo segundo ainda empurra, so que bem menos que o primeiro.
-    static constexpr float kForcaMinimaTurbo = 0.35f;
+    /// aperto do botao -- o tanque teria, na pratica, encolhido. E ele e a
+    /// **terceira coisa que o ponto do turbo compra**: no minimo a nave murcha
+    /// depressa e so os primeiros instantes valem alguma coisa; no talo ela
+    /// empurra quase igual do comeco ao fim, e ai o tanque inteiro e util.
+    static constexpr float kForcaMinimaPorPonto[kPontoMaximo + 1] = {0.18f, 0.18f, 0.35f, 0.48f,
+                                                                     0.58f};
+    static constexpr float forcaMinimaDe(int pontos) {
+        return kForcaMinimaPorPonto[static_cast<std::size_t>(pontosValidos(pontos))];
+    }
 
     /// Ate onde a bancada do conves leva o casco de volta. O reparo de campo
     /// nao deixa a nave nova: acima disto o estrago e de estaleiro, e a viagem
@@ -246,9 +285,10 @@ public:
 
     /// Como a energia esta repartida agora.
     const Reparticao& energia() const { return energia_; }
-    /// Os pontos que sobraram fora dos tres sistemas.
+    /// Os pontos que sobraram fora dos quatro sistemas.
     int reserva() const {
-        return kPontosDeEnergia - energia_.motor - energia_.sensor - energia_.casco;
+        return kPontosDeEnergia - energia_.motor - energia_.turbo - energia_.sensor -
+               energia_.casco;
     }
     /// Reparte a energia, recusando o que quebraria o invariante (cada sistema
     /// entre o minimo e o maximo, soma dentro do total). A recusa fica aqui, e
@@ -295,12 +335,19 @@ public:
     /// e a tecla segurada com o tanque vazio nao faz a nave andar mais.
     bool turbo() const { return turbo_; }
 
-    /// Quanto o turbo empurra agora, de kForcaMinimaTurbo a 1: a fracao do ganho
+    /// Quanto o turbo empurra agora, do piso da reparticao a 1: a fracao do ganho
     /// sobre o cruzeiro que a carga atual ainda paga. Vale mesmo com o motor
     /// fechado -- e o que o proximo aperto vai render, nao o que esta rendendo.
     float forcaDoTurbo() const {
-        return kForcaMinimaTurbo + (1.0f - kForcaMinimaTurbo) * reservaTurbo_;
+        const float piso = forcaMinimaDe(energia_.turbo);
+        return piso + (1.0f - piso) * reservaTurbo_;
     }
+
+    /// Quantos segundos de motor aberto o tanque cheio da com a reparticao de
+    /// agora. E a unidade em que o medidor do diagnostico fala, e por isso ela
+    /// sai daqui e nao de uma constante: repartir energia muda a escala da
+    /// barra, e a barra tem de dizer a verdade sem ninguem ir lembrar dela.
+    float segundosDeTurbo() const { return segundosDeTurboDe(energia_.turbo); }
 
     /// Quanto resta no tanque de turbo, de 0 a 1. O mostrador dele fica no
     /// diagnostico, e nao na cabine: saber quanto sobrou custa largar os
@@ -391,5 +438,25 @@ private:
     Audio::VozId vozAmbiente_{0};
     Audio::VozId vozSirene_{0};
 };
+
+/// Nenhuma reparticao que a nave aceite pode passar da velocidade em que a
+/// colisao deixa de acontecer -- e agora sao duas tabelas somadas, indexadas por
+/// dois sistemas diferentes, com o teto da soma limitado ainda pelo total de
+/// pontos (motor e turbo no talo ao mesmo tempo nao cabem nos oito). Nenhuma
+/// dessas tres coisas se confere de cabeca, entao quem confere e o compilador.
+constexpr bool turboCabeNaColisao() {
+    const int sobra = Flight::kPontosDeEnergia - 2 * Flight::kPontoMinimo;
+    for (int motor = Flight::kPontoMinimo; motor <= Flight::kPontoMaximo; ++motor) {
+        for (int turbo = Flight::kPontoMinimo; turbo <= Flight::kPontoMaximo; ++turbo) {
+            if (motor + turbo <= sobra &&
+                Flight::velocidadeDeTurboDe(motor, turbo) > Flight::kVelocidadeMaximaSegura) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+static_assert(turboCabeNaColisao(),
+              "o turbo passou da velocidade em que a nave atravessa rocha sem colidir");
 
 }  // namespace jogo

@@ -26,6 +26,10 @@ constexpr SDL_Color kCorAtencao{245, 190, 110, 255};
 /// Uma cor por sistema, e as mesmas em toda a tela: o ponto que sai do motor e
 /// entra no sensor muda de cor no caminho, e e assim que se ve que ele andou.
 constexpr SDL_Color kCorMotor{245, 175, 95, 255};
+/// O turbo puxa para o violeta, e nao para o ambar do motor: eles se leem
+/// juntos, mas nao sao a mesma barra em dois pedacos -- um vale o tempo todo, o
+/// outro so enquanto o tanque durar.
+constexpr SDL_Color kCorTurbo{210, 150, 250, 255};
 constexpr SDL_Color kCorSensor{125, 210, 255, 255};
 constexpr SDL_Color kCorCasco{130, 220, 155, 255};
 constexpr SDL_Color kCorReserva{150, 168, 190, 255};
@@ -52,6 +56,8 @@ int PowerScene::pontosDe(Sistema sistema) const {
     switch (sistema) {
         case kMotor:
             return energia.motor;
+        case kTurbo:
+            return energia.turbo;
         case kSensor:
             return energia.sensor;
         case kCasco:
@@ -67,6 +73,9 @@ bool PowerScene::definirPontos(Sistema sistema, int pontos) {
     switch (sistema) {
         case kMotor:
             nova.motor = pontos;
+            break;
+        case kTurbo:
+            nova.turbo = pontos;
             break;
         case kSensor:
             nova.sensor = pontos;
@@ -140,8 +149,8 @@ void PowerScene::atualizar(Context& ctx, float dt) {
     realceRecusa_ = std::max(0.0f, realceRecusa_ - kDecaimentoRealce * dt);
 
     // Cima e baixo escolhem o sistema, na direcao em que as fileiras estao
-    // empilhadas, e dao a volta: com tres fileiras, chegar na ultima por cima e
-    // mais curto do que atravessar as tres.
+    // empilhadas, e dao a volta: com quatro fileiras, chegar na ultima por cima
+    // e mais curto do que atravessar as quatro.
     if (ctx.input.acaoPressionada(Acao::Cima)) {
         escolhido_ = static_cast<Sistema>((escolhido_ + kSistemas - 1) % kSistemas);
         ctx.audio.tocar(somMover_);
@@ -183,7 +192,8 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     const float linha = ctx.fonte.alturaLinha(1.0f);
     const float margem = 12.0f;
     const float fileira = kAlturaPonto + 10.0f;
-    const float alturaConteudo = linha * 2.2f + fileira * 3.0f + 8.0f + fileira;
+    const float alturaConteudo =
+        linha * 2.2f + fileira * static_cast<float>(kSistemas) + 8.0f + fileira;
     const SDL_FRect vidro{meio - 190.0f, 62.0f, 380.0f, alturaConteudo + margem * 2.0f};
     draw::retanguloTela(ctx.renderer, vidro, kCorVidro);
     draw::retanguloTela(ctx.renderer, vidro, draw::misturar(kCorBorda, kCorPerda, realceRecusa_),
@@ -241,6 +251,18 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
                     kCorApagada, y);
     y += fileira;
 
+    // O turbo e o unico que precisa de dois numeros, e eles nao se separam: a
+    // velocidade sozinha esconderia que ela dura dois segundos, e os segundos
+    // sozinhos esconderiam que ela mal sobe do cruzeiro. O primeiro sai do motor
+    // junto com o turbo, porque e do cruzeiro que a rampa parte.
+    std::snprintf(efeito, sizeof(efeito), "%.0f u/s POR %.0f s",
+                  static_cast<double>(
+                      Flight::velocidadeDeTurboDe(energia.motor, energia.turbo)),
+                  static_cast<double>(Flight::segundosDeTurboDe(energia.turbo)));
+    desenharFileira(kTurbo, "TURBO", kCorTurbo, energia.turbo, Flight::kPontoMaximo, efeito,
+                    kCorApagada, y);
+    y += fileira;
+
     std::snprintf(efeito, sizeof(efeito), "ALCANCE %.0f u",
                   static_cast<double>(Flight::alcanceDoSensorDe(energia.sensor)));
     desenharFileira(kSensor, "SENSOR", kCorSensor, energia.sensor, Flight::kPontoMaximo, efeito,
@@ -254,7 +276,7 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     y += fileira + 8.0f;
 
     // A reserva. Com o minimo de um ponto em cada sistema nunca sobram mais de
-    // tres, e por isso ela tem tres lugares e nao seis.
+    // quatro, e por isso ela tem quatro lugares e nao oito.
     const int reserva = voo_.reserva();
     desenharFileira(-1, "RESERVA", kCorReserva, reserva, Flight::kPontosDeEnergia - kSistemas,
                     reserva > 0 ? "ENERGIA PARADA" : nullptr, kCorAtencao, y);

@@ -1160,9 +1160,10 @@ O que acontece em um passo:
   que é o que faz a nave *inclinar na curva* como um caça em vez de girar como
   uma torre. A **arfagem** (*pitch*) é grampeada em ±1,15 rad, para a nave não
   dar cambalhota.
-- **Velocidade.** Persegue o cruzeiro ou o turbo — não pula entre os dois. Os
-  dois alvos saem dos pontos de energia do motor (adiante); com a energia
-  repartida em partes iguais são os 62 e os 185 u/s de sempre. `fatorTurbo()`
+- **Velocidade.** Persegue o cruzeiro ou o turbo — não pula entre os dois. O
+  cruzeiro sai dos pontos de energia do motor e o turbo, do motor mais os pontos
+  do turbo (adiante); com a energia repartida em partes iguais são os 62 e os
+  185 u/s de sempre. `fatorTurbo()`
   devolve onde ela está entre os dois valores, de 0 a 1, e é a medida de esforço
   do motor que a HUD, o brilho do escapamento e o volume do ambiente usam.
 - **Posição.** `posicao += frente() * velocidade * dt`. Tudo o mais é
@@ -1193,28 +1194,37 @@ tela.
 
 ### A energia se reparte
 
-A nave tem uma fonte de energia só, e ela se divide entre **três sistemas**:
-motor, sensor e casco. A soma é fixa — seis pontos, cada sistema entre 1 e 4 —,
-então aqui não se melhora nada: só se decide **de onde tirar**. Quem escolhe é o
-painel de pilotagem, no `R` (`PowerScene`, seção 13); quem guarda a regra é o
+A nave tem uma fonte de energia só, e ela se divide entre **quatro sistemas**:
+motor, turbo, sensor e casco. A soma é fixa — oito pontos, cada sistema entre 1 e
+4 —, então aqui não se melhora nada: só se decide **de onde tirar**. Quem escolhe
+é o painel de pilotagem, no `R` (`PowerScene`, seção 13); quem guarda a regra é o
 `Flight`, porque é regra da nave.
 
-| Pontos | Motor (cruzeiro) | Sensor (nítido / vê até) | Casco (dano por rocha) |
-|---|---|---|---|
-| 1 | 30 u/s | 12 u / 50 u | 0,25 — 4 batidas |
-| **2** | **62 u/s** | **45 u / 110 u** | **0,125 — 8 batidas** |
-| 3 | 82 u/s | 70 u / 130 u | 0,084 — 12 batidas |
-| 4 | 100 u/s | 95 u / 150 u | 0,0625 — 16 batidas |
+| Pontos | Motor (cruzeiro) | Turbo (acima do cruzeiro / tanque) | Sensor (nítido / vê até) | Casco (dano por rocha) |
+|---|---|---|---|---|
+| 1 | 30 u/s | +45 u/s — 2 s | 12 u / 50 u | 0,25 — 4 batidas |
+| **2** | **62 u/s** | **+123 u/s — 5 s** | **45 u / 110 u** | **0,125 — 8 batidas** |
+| 3 | 82 u/s | +150 u/s — 7 s | 70 u / 130 u | 0,084 — 12 batidas |
+| 4 | 100 u/s | +172 u/s — 9 s | 95 u / 150 u | 0,0625 — 16 batidas |
 
 **A linha do meio é o jogo como ele sempre foi**, número por número, e isso não é
-coincidência: a viagem começa em (2, 2, 2), e é o que mantém válido todo o ajuste
-que já tinha sido feito antes de a energia se repartir.
+coincidência: a viagem começa em (2, 2, 2, 2), e é o que mantém válido todo o
+ajuste que já tinha sido feito antes de a energia se repartir — inclusive os 185
+u/s de turbo, que agora são 62 de cruzeiro mais 123 de ganho.
 
-**O degrau de baixo é o maior dos três, de propósito.** As tabelas não sobem em
+**O degrau de baixo é o maior dos quatro, de propósito.** As tabelas não sobem em
 passos iguais: do 1 para o 2 se paga caro — metade da velocidade, menos da
-metade do alcance, o dobro do estrago por rocha — e daí para cima o ganho é mais
-modesto. Sem isso a repartição vira decoração, porque deixar um sistema no mínimo
-não custaria nada e o jogador poria três em 1 para pôr um em 4.
+metade do alcance, o dobro do estrago por rocha, um terço do ganho do turbo com
+menos da metade do tanque — e daí para cima o ganho é mais modesto. Sem isso a
+repartição vira decoração, porque deixar um sistema no mínimo não custaria nada e
+o jogador poria três em 1 para pôr um em 4.
+
+O turbo é o único que **compra duas coisas com o mesmo ponto**, e elas não se
+separam: força (quanto a nave puxa acima do cruzeiro) e duração (quantos segundos
+o tanque cheio dá). Uma sozinha não seria uma escolha — um turbo forte de dois
+segundos é um susto, e um turbo longo que mal sobe do cruzeiro é uma tecla que
+não faz nada. A terceira coisa que ele move é o **piso da força** (adiante), que
+decide se o fim do tanque ainda empurra.
 
 O sensor merece uma nota à parte, porque ele não é um número: é uma **janela de
 visão**, o par que dá o início e o fim da névoa. Até o primeiro a rocha aparece
@@ -1239,11 +1249,13 @@ mostrando só o alcance **nítido**: é a distância em que a rocha é
 inconfundível, que é a acionável.
 
 O mínimo de 1 não é detalhe: sensor zerado seria voar cego, o que não é risco e
-sim injustiça, e motor zerado seria uma nave parada. O teto de 4 é o que faz o
-extremo custar os outros dois — pôr o motor no talo obriga sensor e casco a
-ficarem no mínimo. O que sobrar dos seis pontos fica na **reserva**: energia
-parada, que não alimenta sistema nenhum. Sair do painel com um ponto ali é
-desperdício, e não um erro a impedir.
+sim injustiça, motor zerado seria uma nave parada e turbo zerado seria uma tecla
+que não faz nada. O teto de 4 é o que faz o extremo custar os outros — pôr o
+motor no talo deixa **um ponto solto** para os outros três, que ficam em 2, 1 e 1.
+O que sobrar dos oito pontos fica na **reserva**: energia parada, que não
+alimenta sistema nenhum. Sair do painel com um ponto ali é desperdício, e não um
+erro a impedir. Ao todo são **66 repartições** que a nave aceita, 31 delas sem
+desperdiçar ponto nenhum.
 
 **Motor e sensor não são dois ajustes independentes** — eles se multiplicam em um
 terceiro número, e é esse que o jogador sente:
@@ -1253,13 +1265,13 @@ segundos de aviso = alcance do sensor ÷ velocidade de cruzeiro
 ```
 
 É o tempo entre a rocha ficar **nítida** e alcançar a nave — a medida
-conservadora, porque a pedra já se insinua na névoa antes disso. As dez
-repartições possíveis o espalham de **0,12 s a 3,17 s**, um intervalo de vinte e
-seis vezes, com (2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram os três
-sistemas de uma vez, porque não sobra ponto: `M4 S1 C1` corre a 100 u/s com a
-pedra saindo do borrão a 12 unidades do nariz e cede em quatro rochas; `M1 S4 C1`
-tem mais de três segundos de folga, mas se arrasta a 30 u/s e cede nas mesmas
-quatro.
+conservadora, porque a pedra já se insinua na névoa antes disso. As repartições
+possíveis o espalham de **0,12 s a 3,17 s**, um intervalo de vinte e seis vezes,
+com (2, 2, 2, 2) bem no meio a 0,73 s. Os dois extremos cobram o resto da nave de
+uma vez, porque motor e sensor juntos não passam de seis pontos: `M4 T1 S1 C2`
+corre a 100 u/s com a pedra saindo do borrão a 12 unidades do nariz, sem turbo
+que valha a pena e com meia blindagem; `M1 T1 S4 C2` tem mais de três segundos de
+folga, mas se arrasta a 30 u/s.
 
 O painel **não mostra esse número** — ele mostra o que cada sistema comprou, e a
 conta de quanto tempo isso dá para reagir fica com o jogador. Quem quiser vê-lo
@@ -1278,10 +1290,15 @@ Duas coisas saem de graça da arquitetura que já existia:
   sairia do intervalo. Quem a lê é o ganho do ambiente e o brilho do escapamento,
   e nenhum dos dois aceita um número de fora.
 
-O teto do turbo **não** acompanha o do cruzeiro na mesma proporção, e o motivo é
-o passo fixo: a 240 u/s a nave anda 4,0 unidades por passo, e a menor colisão
-possível é 4,2 (raio 2,0 da nave mais 2,2 da menor rocha). Acima disso ela
-começaria a atravessar pedra sem nunca encostar nela.
+O teto do turbo **é somado ao cruzeiro**, e o limite da soma é o passo fixo: a
+240 u/s a nave anda 4,0 unidades por passo, e a menor colisão possível é 4,2
+(raio 2,0 da nave mais 2,2 da menor rocha). Acima disso ela começaria a
+atravessar pedra sem nunca encostar nela. Agora que a conta tem duas tabelas
+dentro, indexadas por dois sistemas diferentes, quem confere que nenhuma
+repartição possível passa disso é um `static_assert` logo abaixo da classe: ele
+varre os pares de motor e turbo que cabem nos oito pontos. A repartição mais
+rápida que a nave aceita é `M2 T4`, com teto de 234 u/s — e o pico medido é 223,
+porque a carga cai enquanto a rampa sobe (adiante).
 
 ### O casco volta, até certo ponto
 
@@ -1379,22 +1396,39 @@ Hoje ele sai de um **tanque** que o próprio uso esvazia e que se refaz sozinho,
 devagar, enquanto o motor está fechado. Correr deixou de ser gratuito e passou a
 ser uma decisão sobre *quando* correr.
 
-Três números, e eles são a troca inteira:
+**Quanto tanque há é o ponto de energia do turbo que decide** — é o segundo lado
+do mesmo ponto que compra a força. O tempo de encher **não** acompanha, e é de
+propósito: são os mesmos 45 segundos do vazio ao cheio em qualquer repartição.
+Então o ponto compra também a razão entre correr e esperar, e é ela, e não os
+segundos de tanque, que muda de figura entre os extremos:
+
+| turbo | tanque | acima do cruzeiro | espera por segundo de motor aberto | religa em |
+| --- | --- | --- | --- | --- |
+| 1 | 2 s | +45 u/s | 22,5 s | 22,50 s |
+| **2** | **5 s** | **+123 u/s** | **9 s** | **9,02 s** |
+| 3 | 7 s | +150 u/s | 6,4 s | 6,43 s |
+| 4 | 9 s | +172 u/s | 5 s | 5,02 s |
+
+No mínimo o turbo é um susto que se dá uma vez por trecho e se paga por quase
+meio minuto; no talo é uma ferramenta de que se lança mão com alguma
+regularidade. A última coluna é o tempo até o motor religar depois de zerar o
+tanque, medido: o limiar vale sempre **um segundo de turbo**, então quanto maior
+o tanque, menor a fração dele que a espera representa.
 
 | constante | valor | o que significa |
 | --- | --- | --- |
-| `kConsumoTurbo` | 0,2 tanque/s | o tanque cheio dá **cinco segundos** de turbo |
-| `kSegundosParaEncher` | 45 s | do vazio ao cheio — **nove segundos de espera por segundo de motor aberto** |
-| `kReligarTurbo` | 0,2 tanque | zerar o tanque **superaquece** o motor, e ele só reabre com uma divisão inteira de volta |
+| `kSegundosDeTurboPorPonto` | 2, 5, 7, 9 s | quanto o tanque cheio dá de motor aberto |
+| `kSegundosParaEncher` | 45 s | do vazio ao cheio, igual em qualquer repartição |
+| `religarTurboDe` | 1 s de turbo | zerar o tanque **superaquece** o motor, e ele só reabre com uma divisão inteira de volta |
 
 #### O turbo perde força junto com a carga
 
 O tanque não entrega os mesmos 185 u/s do primeiro ao último segundo. O ganho
-sobre o cruzeiro é multiplicado por uma **força** que cai com a reserva, entre
-`kForcaMinimaTurbo` (0,35, tanque no fim) e 1 (tanque cheio). Como o alvo se move
-a cada passo enquanto o tanque esvazia, a nave **murcha durante o próprio turbo**
-em vez de fechar o motor de uma vez. Medido com a tecla segurada do início ao fim
-de um tanque cheio, com a energia neutra:
+sobre o cruzeiro é multiplicado por uma **força** que cai com a reserva, entre um
+piso (tanque no fim) e 1 (tanque cheio). Como o alvo se move a cada passo
+enquanto o tanque esvazia, a nave **murcha durante o próprio turbo** em vez de
+fechar o motor de uma vez. Medido com a tecla segurada do início ao fim de um
+tanque cheio, com a energia neutra:
 
 | t | tanque | força | velocidade | FOV |
 | --- | --- | --- | --- | --- |
@@ -1409,15 +1443,30 @@ passa a informar a própria carga**. O piloto sente o tanque acabando antes de
 acabar, e deixa de ser surpreendido pelo motor fechando sem aviso — o que era o
 preço de a `StatusScene` ficar a uma travessia de distância.
 
-O piso de 0,35 existe para o resto do tanque não virar lixo. Sem ele a força
-tenderia a zero junto com a reserva, os últimos goles não valeriam o aperto do
-botão e o tanque teria, na prática, encolhido.
+O piso existe para o resto do tanque não virar lixo. Sem ele a força tenderia a
+zero junto com a reserva, os últimos goles não valeriam o aperto do botão e o
+tanque teria, na prática, encolhido. E ele é a **terceira coisa que o ponto do
+turbo compra** (`kForcaMinimaPorPonto`: 0,18, 0,35, 0,48, 0,58): no mínimo a nave
+murcha depressa e só os primeiros instantes valem alguma coisa; no talo ela
+empurra quase igual do começo ao fim, e aí o tanque inteiro é útil. É o que
+impede o turbo alto de ser só "o mesmo turbo por mais tempo".
 
-Uma consequência que vale registrar: **`kTurboPorPonto` deixou de ser
+Uma consequência que vale registrar: **o teto da tabela deixou de ser
 atingível**. A velocidade persegue o alvo em rampa (taxa 3/s) e, no tempo que
-leva para chegar perto, a carga já caiu — o pico medido é 167,8 e não os 185 da
-tabela. Isso não afrouxa nada: aquele teto existe como limite de segurança da
-colisão, e a nave passou a só se afastar dele.
+leva para chegar perto, a carga já caiu. Medindo com a tecla segurada, por
+repartição:
+
+| repartição | teto | pico medido | motor aberto |
+| --- | --- | --- | --- |
+| M2 T1 | 107 u/s | 93,8 u/s | 2,03 s |
+| **M2 T2** | **185 u/s** | **167,9 u/s** | **5,03 s** |
+| M2 T4 | 234 u/s | 222,8 u/s | 9,02 s |
+| M4 T2 | 223 u/s | 204,5 u/s | 5,03 s |
+| M3 T3 | 232 u/s | 217,6 u/s | 7,02 s |
+
+Isso não afrouxa nada: aquele teto existe como limite de segurança da colisão, e
+a nave só se afasta dele — o pico mais alto que se consegue tirar de uma
+repartição válida é 223 u/s, contra os 240 que a colisão reserva.
 
 E o **campo de visão da cabine passou a seguir a aceleração real**, e não o
 estado da tecla: `fov_` persegue `kFovBase + (kFovTurbo - kFovBase) *
@@ -1439,8 +1488,8 @@ razão entre as duas taxas — era verdade, e era a coisa errada a olhar. O que 
 perdia era a **escolha da hora**, e era ela, e não a média, que fazia o turbo ser
 um recurso em vez de um botão.
 
-Medido com um piloto de teste que segura a tecla o tempo todo, o ciclo estabiliza
-exatamente onde deve:
+Medido com um piloto de teste que segura a tecla o tempo todo, com o turbo no
+neutro, o ciclo estabiliza exatamente onde deve:
 
 ```
 t= 0,02  tanque 4,98 s  motor ABERTO
@@ -1460,7 +1509,10 @@ cada quadro rendeu 7,8%, menos que simplesmente segurá-la.
 O limiar vale **uma divisão** porque é a unidade que o medidor já desenhava: a
 regra fica visível na barra, sem precisar de texto explicando. Com o motor
 quente, a primeira marca deixa de ser escala e vira **alvo** — acesa e mais
-grossa, ela mostra onde a barra precisa chegar.
+grossa, ela mostra onde a barra precisa chegar. Como a divisão vale sempre um
+segundo de turbo, **quantas divisões a barra tem depende do ponto de energia** —
+de duas a nove —, e é assim que o medidor conta a escala em que está falando sem
+uma linha de texto a mais.
 
 A recarga não tem carência própria além disso, e não precisa ter: a trava já *é*
 a espera, e uma segunda em cima dela faria o mesmo serviço duas vezes.
@@ -1836,8 +1888,8 @@ mesmo motivo aritmético descrito acima.
 ### PowerScene
 
 A repartição de energia, aberta com `R` no painel de pilotagem — a terceira boca
-do monitor central, ao lado do `E` que pilota e do `Q` que lê o casco. Três
-fileiras de quatro lugares — motor, sensor, casco. **Cima e baixo escolhem
+do monitor central, ao lado do `E` que pilota e do `Q` que lê o casco. Quatro
+fileiras de quatro lugares — motor, turbo, sensor, casco. **Cima e baixo escolhem
 a fileira**, na direção em que elas estão empilhadas; **esquerda e direita movem
 um ponto** entre ela e a **reserva**, na direção em que a fileira de pontos
 cresce. Cada eixo do direcional anda no sentido do que ele mexe, e é o que
@@ -1868,8 +1920,13 @@ outras. E, como na bancada, o `acompanhar` **não mexe nos pontos**: eles não
 perseguem a simulação, são a escolha do jogador, e um painel aberto por cima não
 reparte energia por conta própria (seção 5).
 
-Cada fileira diz o que a energia comprou ali — `CRUZEIRO 62 u/s`, `ALCANCE 45 u`,
-`AGUENTA 8 ROCHAS` —, e é só isso. O alcance mostrado é o **nítido**, e não o
+Cada fileira diz o que a energia comprou ali — `CRUZEIRO 62 u/s`,
+`185 u/s POR 5 s`, `ALCANCE 45 u`, `AGUENTA 8 ROCHAS` —, e é só isso. A do turbo
+é a única com dois números, porque é o único ponto que compra duas coisas: a
+velocidade sozinha esconderia que ela dura dois segundos, e os segundos sozinhos
+esconderiam que ela mal sobe do cruzeiro. O primeiro deles sai do motor **e** do
+turbo, porque é do cruzeiro que a rampa parte — mexer no motor muda a linha do
+turbo junto. O alcance mostrado é o **nítido**, e não o
 `vê até`: é a distância em que a rocha é inconfundível, que é a acionável. O
 quanto a janela inteira mudou se vê na cabine, não se lê aqui. Os segundos de aviso (seção 12) são a conta
 que amarra as duas primeiras, mas quem a faz é o jogador: pôr o número pronto na
@@ -2325,7 +2382,7 @@ mudança vai no corpo da mensagem de commit.
 | **Reamostrador** | Conversor de taxa de amostragem (ex.: 22050 → 44100 Hz). |
 | **Recorte no plano próximo** | Cortar os triângulos contra um plano à frente da câmera antes de projetar. |
 | **Regime permanente** | O estado de equilíbrio para o qual um sistema converge; aqui, o atraso `v/k` da câmera. |
-| **Repartição de energia** | Os seis pontos que a nave divide entre motor, sensor e casco; a soma é fixa, então melhorar um é tirar de outro. |
+| **Repartição de energia** | Os oito pontos que a nave divide entre motor, turbo, sensor e casco; a soma é fixa, então melhorar um é tirar de outro. |
 | **Reserva (energia)** | Os pontos da repartição que não foram postos em sistema nenhum; energia parada, que não faz nada. |
 | **Resolução lógica** | A resolução fixa em que o jogo desenha (640×360), escalada depois para a janela. |
 | **Ruído branco / marrom** | Energia igual em todas as frequências / caindo a −6 dB por oitava. |

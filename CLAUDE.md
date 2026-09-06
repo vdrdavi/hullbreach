@@ -116,32 +116,52 @@ congelou (adiante). A `FlightScene` guarda uma referência para o `Flight` da
 cena de baixo; isso é seguro porque a pilha só desempilha do topo, então o
 interior sempre sobrevive à cabine.
 
+**A energia se reparte entre quatro sistemas** — motor, turbo, sensor e casco
+(`Flight::Reparticao`) —, oito pontos, cada um de 1 a 4, e o neutro (2, 2, 2, 2)
+reproduz o jogo número por número. Quem guarda a regra e a recusa é o `Flight`,
+não a `PowerScene`.
+
 **O turbo é escasso.** Ele sai de um tanque (`Flight::reservaTurbo`) que o uso
 esvazia e que se refaz sozinho enquanto o motor está fechado: cinco segundos de
-turbo, quarenta e cinco para encher do vazio — nove de espera por segundo de
-motor aberto. Nessa proporção o turbo não é um jeito de viajar e sim uma carta
-que se joga: cinco segundos corridos custam quase um minuto de espera.
+turbo com o ponto no neutro, quarenta e cinco para encher do vazio — nove de
+espera por segundo de motor aberto. Nessa proporção o turbo não é um jeito de
+viajar e sim uma carta que se joga: cinco segundos corridos custam quase um
+minuto de espera.
+
+**Quanto vale essa carta é um ponto de energia** (`Reparticao::turbo`), e ele
+compra três coisas com o mesmo movimento: o ganho sobre o cruzeiro
+(`kGanhoTurboPorPonto`, +45 a +172 u/s), o tamanho do tanque
+(`kSegundosDeTurboPorPonto`, 2 a 9 s) e o piso da força (`kForcaMinimaPorPonto`).
+Separar uma delas mataria a escolha: turbo forte e curto é um susto, turbo longo
+e fraco é uma tecla que não faz nada. O tempo de encher **não** acompanha — 45 s
+sempre —, então o ponto compra também a razão entre correr e esperar, de 22,5:1 a
+5:1. A velocidade de turbo é a soma cruzeiro + ganho (`velocidadeDeTurboDe`), e
+quem confere que nenhuma repartição possível passa de `kVelocidadeMaximaSegura` é
+um `static_assert` abaixo da classe: a conta tem duas tabelas e um limite de
+pontos dentro, e não se faz de cabeça.
 
 **O turbo perde força junto com a carga** (`Flight::forcaDoTurbo`): o ganho sobre
-o cruzeiro é multiplicado por um fator que cai de 1 (cheio) a `kForcaMinimaTurbo`
-(fim do tanque), então a nave murcha durante o próprio turbo em vez de fechar o
-motor de uma vez. É o que faz o turbo **informar a própria carga**, já que o
-medidor mora em outra tela; o piso existe para os últimos goles não virarem lixo.
-Consequência: `kTurboPorPonto` virou assíntota — a rampa da velocidade não
-alcança o teto antes de a carga cair (pico medido de 168 contra 185 nominais), e
-como aquele teto é o limite de segurança da colisão, a nave só se afasta dele. O
-fov da cabine, o ganho do ambiente e o brilho do escapamento acompanham sozinhos
-porque os três leem `fatorTurbo()` — velocidade real contra o teto —, e não a
-tecla.
+o cruzeiro é multiplicado por um fator que cai de 1 (cheio) ao piso da
+repartição (fim do tanque), então a nave murcha durante o próprio turbo em vez de
+fechar o motor de uma vez. É o que faz o turbo **informar a própria carga**, já
+que o medidor mora em outra tela; o piso existe para os últimos goles não virarem
+lixo. Consequência: o teto da tabela virou assíntota — a rampa da velocidade não
+alcança o alvo antes de a carga cair (pico medido de 168 contra 185 nominais no
+neutro; 223 contra 234 na repartição mais rápida), e como aquele teto é o limite
+de segurança da colisão, a nave só se afasta dele. O fov da cabine, o ganho do
+ambiente e o brilho do escapamento acompanham sozinhos porque os três leem
+`fatorTurbo()` — velocidade real contra o teto —, e não a tecla.
 
 **Zerar o tanque superaquece o motor** (`Flight::superaquecido`), e ele só reabre
-com uma divisão inteira do medidor de volta (`kReligarTurbo`) — não com o
+com uma divisão inteira do medidor de volta (`religarTurboDe`) — não com o
 primeiro pingo de recarga. Sem essa trava havia um furo que a média escondia: com
 o tanque no zero, soltar e apertar devolvia turbo a cada quadro e a nave ficava
 rápida em picotes. A velocidade média continuava a razão entre as taxas, mas o
 jogador deixava de ter de **escolher a hora**, e era isso que fazia o turbo ser
 recurso e não botão. O limiar vale uma divisão porque é a unidade que a barra já
-desenhava: a regra fica visível no medidor sem texto explicando.
+desenhava: a regra fica visível no medidor sem texto explicando. A divisão vale
+sempre um segundo de turbo, então **quantas divisões a barra tem depende do ponto
+de energia** — de duas a nove —, e é assim que ela diz em que escala fala.
 
 `Flight::turbo()` não é a tecla, então a HUD da cabine escreve `[SUPERAQUECIDO]`
 — e o deixa no ar **enquanto a trava durar**, não só quando alguém aperta. É

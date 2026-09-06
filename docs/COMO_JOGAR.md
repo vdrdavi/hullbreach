@@ -62,8 +62,8 @@ desviando.
 6. **`Esc`** volta ao convés. Ande até o painel de novo e aperte **`Q`**: o
    diagnóstico mostra o casco em 87% e o tanque de turbo. Feche com `Q` ou
    `Esc`.
-7. No mesmo painel, **`R`** abre a repartição de energia — motor, sensor e
-   casco, seis pontos para dividir entre os três.
+7. No mesmo painel, **`R`** abre a repartição de energia — motor, turbo, sensor
+   e casco, oito pontos para dividir entre os quatro.
 8. Ande até o canto oposto do convés, onde fica a **bancada**, e aperte `E`:
    ali se solda o casco de volta, um ponto por vez, num compasso de ponteiro.
 
@@ -182,19 +182,21 @@ parar (cai para 18 u/s, e a rampa do motor a leva de volta ao cruzeiro).
 
 O turbo **é escasso**, e essa é a mecânica inteira:
 
-- o tanque cheio dá **5 segundos** de motor aberto;
-- do vazio ao cheio são **45 segundos** — nove segundos de espera por segundo
-  de turbo;
+- o tanque cheio dá **5 segundos** de motor aberto — com o turbo em 2, que é
+  como a viagem começa; a repartição de energia move isso de 2 a 9 segundos;
+- do vazio ao cheio são **45 segundos**, sempre, em qualquer repartição — com o
+  tanque de 5 s, nove segundos de espera por segundo de turbo;
 - o tanque só se recompõe com o motor **fechado**.
 
 Três consequências que você sente antes de ler qualquer número:
 
 **1. O turbo perde força junto com a carga.** Ele não entrega os mesmos 185 u/s
 do primeiro ao último segundo: o ganho sobre o cruzeiro encolhe conforme o
-tanque esvazia (até 35% dele). A nave murcha debaixo da sua mão em vez de fechar
-o motor de uma vez — é o próprio turbo contando quanto ainda resta. Por isso a
-velocidade de pico que você vê na HUD (uns 168 u/s com o motor em 2) fica
-**abaixo** do número nominal da tabela: a carga cai antes de a rampa chegar lá.
+tanque esvazia (até 35% dele com o turbo em 2 — 18% no mínimo, 58% no talo). A
+nave murcha debaixo da sua mão em vez de fechar o motor de uma vez — é o próprio
+turbo contando quanto ainda resta. Por isso a velocidade de pico que você vê na
+HUD (uns 168 u/s com motor e turbo em 2) fica **abaixo** do número nominal da
+tabela: a carga cai antes de a rampa chegar lá.
 
 **2. Zerar o tanque superaquece o motor.** Ele não volta a abrir ao primeiro
 pingo de recarga: exige **uma divisão inteira** do medidor de volta — um segundo
@@ -206,15 +208,17 @@ diagnóstico, no convés. Saber custa largar os controles e atravessar a nave �
 o mesmo pedágio que o casco cobra.
 
 Turbo não é jeito de viajar; é carta que se joga. Cinco segundos corridos custam
-quase um minuto de espera.
+quase um minuto de espera — e quanto vale essa carta é você quem decide, no
+painel de energia.
 
 ---
 
 ## A repartição de energia
 
-`R` no painel. A nave tem **seis pontos de energia** e três sistemas — **motor**,
-**sensor** e **casco**. Cada sistema aceita de **1 a 4** pontos, e a soma é fixa:
-aqui não se melhora nada, só se decide **de onde tirar**.
+`R` no painel. A nave tem **oito pontos de energia** e quatro sistemas —
+**motor**, **turbo**, **sensor** e **casco**. Cada sistema aceita de **1 a 4**
+pontos, e a soma é fixa: aqui não se melhora nada, só se decide **de onde
+tirar**.
 
 ↑↓ escolhem o sistema; → tira um ponto da reserva e põe no sistema, ← faz o
 contrário. A energia sempre passa pela **reserva**, à vista — não há atalho que
@@ -223,16 +227,24 @@ alimenta nada: o painel avisa com `ENERGIA PARADA`, mas não impede.
 
 ### O que cada ponto compra
 
-| Pontos | Motor (cruzeiro) | Motor (turbo) | Sensor (nítido) | Sensor (visível) | Casco (dano por rocha) | Casco (batidas) |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | 30 u/s | 95 u/s | 12 u | 50 u | 25% | 4 |
-| 2 | 62 u/s | 185 u/s | 45 u | 110 u | 12,5% | 8 |
-| 3 | 82 u/s | 215 u/s | 70 u | 130 u | 8,4% | 12 |
-| 4 | 100 u/s | 240 u/s | 95 u | 150 u | 6,25% | 16 |
+| Pontos | Motor (cruzeiro) | Turbo (acima do cruzeiro) | Turbo (tanque) | Sensor (nítido) | Sensor (visível) | Casco (dano por rocha) | Casco (batidas) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 30 u/s | +45 u/s | 2 s | 12 u | 50 u | 25% | 4 |
+| 2 | 62 u/s | +123 u/s | 5 s | 45 u | 110 u | 12,5% | 8 |
+| 3 | 82 u/s | +150 u/s | 7 s | 70 u | 130 u | 8,4% | 12 |
+| 4 | 100 u/s | +172 u/s | 9 s | 95 u | 150 u | 6,25% | 16 |
 
-**O degrau de baixo é o maior dos três, de propósito**: deixar um sistema no
+**O degrau de baixo é o maior dos quatro, de propósito**: deixar um sistema no
 mínimo dói no primeiro segundo. Do 1 para o 2 se paga caro; daí para cima o
 ganho é mais modesto.
+
+O turbo se soma ao cruzeiro: com motor e turbo em 2 são 62 + 123 = **185 u/s**, o
+número que a fileira do painel mostra. Mexer no motor muda a linha do turbo
+junto, porque é do cruzeiro que ele parte. E o ponto de turbo compra três coisas
+de uma vez — quanto ele puxa, quantos segundos dura e quanto ainda empurra no fim
+do tanque —, então um turbo no mínimo não é "o mesmo turbo mais curto": é um
+empurrão de dois segundos que murcha quase todo, e ainda custa 22 segundos de
+espera para religar depois de zerar.
 
 O sensor tem **dois** números porque ele é uma janela, não uma distância: até o
 primeiro a rocha aparece como ela é, do primeiro ao segundo ela vai virando a
@@ -246,16 +258,18 @@ Motor e sensor não são dois ajustes independentes — eles se multiplicam nos
 **segundos de aviso**: quanto tempo passa entre a rocha sair da névoa e alcançar
 a nave, no cruzeiro.
 
-| Repartição (motor/sensor/casco) | Segundos de aviso |
+| Repartição (motor/turbo/sensor/casco) | Segundos de aviso |
 | --- | --- |
-| 2 / 2 / 2 (o padrão) | 0,73 s |
-| 1 / 4 / 1 (vista de longe, devagar) | 3,2 s |
-| 4 / 1 / 1 (correr às cegas) | 0,12 s |
+| 2 / 2 / 2 / 2 (o padrão) | 0,73 s |
+| 1 / 1 / 4 / 2 (vista de longe, devagar) | 3,2 s |
+| 4 / 1 / 1 / 2 (correr às cegas) | 0,12 s |
 
-Repare que a aposta extrema cobra os três de uma vez: pôr o motor no talo
-obriga sensor **e** casco ao mínimo, porque não sobra ponto.
+Repare que a aposta extrema cobra o resto da nave de uma vez: pôr o motor no talo
+deixa **um ponto solto** para os outros três, e é você quem escolhe qual deles
+não fica no mínimo.
 
-A energia repartida vale por **esta** viagem: uma partida nova começa em 2/2/2.
+A energia repartida vale por **esta** viagem: uma partida nova começa em
+2/2/2/2.
 E a mudança não é instantânea — a névoa abre e fecha em rampa, e é ela que
 mostra a energia chegando ao sistema.
 
@@ -270,9 +284,10 @@ mostra a energia chegando ao sistema.
   uma batida acabou de acontecer, a barra mostra em vermelho o pedaço que se
   foi e a palavra pisca.
 - **quanto cada rocha custa**, que sai da blindagem que você escolheu.
-- **TURBO**: o tanque, em barra e em segundos, com uma marca por segundo. Com o
-  motor superaquecido, a primeira marca acende: é o alvo que a recarga precisa
-  alcançar para o turbo religar.
+- **TURBO**: o tanque, em barra e em segundos, com uma marca por segundo — de
+  duas a nove marcas, conforme o ponto de energia do turbo, e é assim que a
+  barra diz em que escala está falando. Com o motor superaquecido, a primeira
+  marca acende: é o alvo que a recarga precisa alcançar para o turbo religar.
 
 O diagnóstico se abre por cima do convés, que continua visível atrás — inclusive
 a luz vermelha do casco crítico. E a nave continua voando enquanto você lê: o
@@ -366,7 +381,7 @@ correm com a velocidade que a nave tinha, as faíscas se abrem, e só então a t
 apaga para o `NAVE PERDIDA`.
 
 `Enter` ou `Esc` volta ao menu. Não há continuar: a viagem seguinte começa do
-zero, com o casco inteiro, o tanque cheio e a energia em 2/2/2.
+zero, com o casco inteiro, o tanque cheio e a energia em 2/2/2/2.
 
 ---
 
@@ -429,6 +444,12 @@ denso que você já enxergou inteiro, ou para escapar de uma formação. Cinco
 segundos gastos à toa é um minuto de viagem sem carta na mão — e o motor
 superaquecido dá justamente o intervalo em que você mais queria correr.
 
+**Turbo alto ou motor alto são viagens diferentes.** O motor rende o tempo todo e
+encurta o aviso o tempo todo; o turbo não rende nada até você apertar, e aí rende
+muito. Se a viagem tem sido de trechos limpos com apertos curtos, o ponto vale
+mais no turbo; se ela é densa do começo ao fim, o turbo é energia parada com
+outro nome.
+
 **Sacrificar o sensor é diferente de sacrificar o casco.** Casco no mínimo
 significa quatro batidas; sensor no mínimo significa **não ver** a batida
 chegar. O primeiro é uma conta, o segundo é uma aposta.
@@ -447,16 +468,17 @@ está nos controles, é hora de estar.
 | Coisa | Valor |
 | --- | --- |
 | Cruzeiro (motor 2) | 62 u/s |
-| Turbo nominal (motor 2) | 185 u/s (pico real perto de 168) |
+| Turbo nominal (motor 2, turbo 2) | 185 u/s (pico real perto de 168) |
+| Turbo mais rápido possível (motor 2, turbo 4) | 234 u/s (pico real perto de 223) |
 | Velocidade logo após uma batida | 18 u/s |
-| Tanque de turbo | 5 s de uso, 45 s do vazio ao cheio |
-| Religar após superaquecer | 1 divisão do medidor = 1 s de turbo (9 s de espera) |
-| Força do turbo no fim do tanque | 35% do ganho |
+| Tanque de turbo | 5 s de uso com o turbo em 2 (2 a 9 s), 45 s do vazio ao cheio |
+| Religar após superaquecer | 1 divisão do medidor = 1 s de turbo (22,5 s a 5 s de espera) |
+| Força do turbo no fim do tanque | 35% do ganho com o turbo em 2 (18% a 58%) |
 | Dano por rocha (casco 2) | 12,5% — 8 batidas do casco inteiro |
 | Casco crítico (sirene e luz) | 30% ou menos |
 | Solda | +3,5% por acerto, teto de 75% |
 | Erro de solda / batida na bancada | 0,55 s de maçarico frio e série perdida |
-| Pontos de energia | 6, entre 3 sistemas, de 1 a 4 cada |
+| Pontos de energia | 8, entre 4 sistemas, de 1 a 4 cada |
 | Sensor (nítido/visível, sensor 2) | 45 u / 110 u |
 | Cadência do sonar | 0,85 s (longe) a 0,10 s (encostando) |
 | Deriva das rochas | até 6 u/s |

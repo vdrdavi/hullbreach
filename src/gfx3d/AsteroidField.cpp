@@ -46,8 +46,9 @@ constexpr int kVariedadesGrandes = 5;
 /// deslocamento **relativo** entre nave e rocha em um passo passar da menor
 /// sobreposicao possivel, elas se atravessam sem nunca se tocar. A menor e 4,2
 /// (raio 2,0 da nave mais 2,2 da menor rocha), o que a 60 Hz da 252 u/s de
-/// velocidade relativa. O turbo no talo ja usa 240 desses (veja
-/// Flight::kTurboPorPonto), e sobram 12 -- este 6 e metade da folga, contra uma
+/// velocidade relativa. O teto do turbo reserva 240 desses (veja
+/// Flight::kVelocidadeMaximaSegura, que um static_assert confere contra todas as
+/// reparticoes possiveis), e sobram 12 -- este 6 e metade da folga, contra uma
 /// rocha vindo de frente no pior caso.
 ///
 /// Passar disto exige trocar a colisao por uma varredura de segmento, e nao

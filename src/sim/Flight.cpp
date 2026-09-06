@@ -158,10 +158,11 @@ bool Flight::repartirEnergia(const Reparticao& nova) {
     const auto dentro = [](int pontos) {
         return pontos >= kPontoMinimo && pontos <= kPontoMaximo;
     };
-    if (!dentro(nova.motor) || !dentro(nova.sensor) || !dentro(nova.casco)) {
+    if (!dentro(nova.motor) || !dentro(nova.turbo) || !dentro(nova.sensor) ||
+        !dentro(nova.casco)) {
         return false;
     }
-    if (nova.motor + nova.sensor + nova.casco > kPontosDeEnergia) {
+    if (nova.motor + nova.turbo + nova.sensor + nova.casco > kPontosDeEnergia) {
         return false;
     }
     energia_ = nova;
@@ -170,7 +171,7 @@ bool Flight::repartirEnergia(const Reparticao& nova) {
 
 float Flight::fatorTurbo() const {
     const float cruzeiro = velocidadeDeCruzeiroDe(energia_.motor);
-    const float aberto = velocidadeDeTurboDe(energia_.motor);
+    const float aberto = velocidadeDeTurboDe(energia_.motor, energia_.turbo);
     // Grampeado porque a velocidade persegue o alvo em rampa: repartir o motor
     // no meio de uma aceleracao move os dois extremos debaixo dela, e por um
     // instante a razao sairia do intervalo. Quem le isto e o ganho do ambiente
@@ -218,16 +219,19 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // consumo, abaixo.
         if (reservaTurbo_ <= 0.0f) {
             superaquecido_ = true;
-        } else if (reservaTurbo_ >= kReligarTurbo) {
+        } else if (reservaTurbo_ >= religarTurboDe(energia_.turbo)) {
             superaquecido_ = false;
         }
         turbo_ = comando.turbo && !superaquecido_;
         // O tanque esvazia enquanto o motor esta aberto e se refaz sozinho
-        // enquanto esta fechado -- tres vezes mais devagar do que gasta. A
-        // recarga nao tem carencia propria: a trava acima ja e a espera, e uma
-        // segunda em cima dela so faria o mesmo servico duas vezes.
+        // enquanto esta fechado. O gasto sai do ponto de turbo (dois a nove
+        // segundos de tanque cheio) e a recarga nao: encher leva os mesmos 45 s
+        // em qualquer reparticao, entao o ponto compra tambem a razao entre
+        // correr e esperar. A recarga nao tem carencia propria: a trava acima ja
+        // e a espera, e uma segunda em cima dela so faria o mesmo servico duas
+        // vezes.
         if (turbo_) {
-            reservaTurbo_ = std::max(0.0f, reservaTurbo_ - kConsumoTurbo * dt);
+            reservaTurbo_ = std::max(0.0f, reservaTurbo_ - consumoDeTurboDe(energia_.turbo) * dt);
         } else {
             reservaTurbo_ = std::min(1.0f, reservaTurbo_ + kRecargaTurbo * dt);
         }
@@ -243,7 +247,8 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // atravessar a nave para ler o medidor.
         const float cruzeiro = velocidadeDeCruzeiroDe(energia_.motor);
         const float alvo =
-            turbo_ ? cruzeiro + (velocidadeDeTurboDe(energia_.motor) - cruzeiro) * forcaDoTurbo()
+            turbo_ ? cruzeiro + (velocidadeDeTurboDe(energia_.motor, energia_.turbo) - cruzeiro) *
+                                    forcaDoTurbo()
                    : cruzeiro;
         velocidade_ = aproximar(velocidade_, alvo, 3.0f, dt);
     }

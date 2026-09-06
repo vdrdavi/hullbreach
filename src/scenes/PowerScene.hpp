@@ -8,14 +8,16 @@
 
 namespace jogo {
 
-/// O repartidor de energia do conves: motor, sensor e casco saem da mesma
-/// fonte, e o painel e onde se decide de onde tirar.
+/// O repartidor de energia do conves: motor, turbo, sensor e casco saem da
+/// mesma fonte, e o painel e onde se decide de onde tirar.
 ///
 /// Aqui nao se melhora nada. Cada ponto sai de um sistema e entra em outro
 /// passando pela reserva, entao toda vantagem e comprada com o risco de outro
 /// lugar: motor alto chega mais longe por segundo e deixa menos tempo entre ver
-/// a rocha e bater nela; sensor alto enxerga cedo e anda devagar; casco alto
-/// aguenta mais rocha e e lento e cego. As regras de quanto cada ponto compra
+/// a rocha e bater nela; turbo alto guarda mais folego para atravessar um
+/// trecho ruim e nao adianta nada no resto da viagem; sensor alto enxerga cedo e
+/// anda devagar; casco alto aguenta mais rocha e e lento e cego. As regras de
+/// quanto cada ponto compra
 /// -- e a recusa de uma reparticao invalida -- ficam no Flight, porque sao
 /// regras da nave e nao desta tela.
 ///
@@ -41,9 +43,12 @@ public:
     bool bloqueiaRender() const override { return false; }
 
 private:
-    /// Os tres sistemas, na ordem em que aparecem na tela e em que cima e baixo
+    /// Os quatro sistemas, na ordem em que aparecem na tela e em que cima e baixo
     /// os percorrem.
-    enum Sistema { kMotor = 0, kSensor = 1, kCasco = 2, kSistemas = 3 };
+    /// O turbo vem logo abaixo do motor porque e a segunda metade da mesma
+    /// decisao: um da a velocidade que se mantem, o outro a que se puxa por
+    /// alguns segundos.
+    enum Sistema { kMotor = 0, kTurbo = 1, kSensor = 2, kCasco = 3, kSistemas = 4 };
 
     /// A celula de um ponto na fileira, e o vao entre duas.
     static constexpr float kLarguraPonto = 16.0f;
