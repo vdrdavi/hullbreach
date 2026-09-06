@@ -158,7 +158,7 @@ public:
     /// nevoa e alcancar a nave, no cruzeiro. Motor e sensor nao sao dois
     /// ajustes independentes -- eles se multiplicam neste, e e ele, e nao a
     /// tabela, que o jogador sente. Com (2,2,2) da 0,73 s; com o motor no talo
-    /// e o sensor no minimo, 0,20 s -- e ai o casco tambem esta em 1, porque
+    /// e o sensor no minimo, 0,12 s -- e ai o casco tambem esta em 1, porque
     /// nao sobrou ponto: a aposta extrema cobra os tres de uma vez.
     static constexpr float segundosDeAvisoDe(const Reparticao& reparticao) {
         return alcanceDoSensorDe(reparticao.sensor) / velocidadeDeCruzeiroDe(reparticao.motor);
