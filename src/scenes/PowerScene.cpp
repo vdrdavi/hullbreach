@@ -127,6 +127,8 @@ void PowerScene::atualizar(Context& ctx, float dt) {
     // A mesma tecla que abriu fecha, como o Q do diagnostico. Interagir nao
     // entra aqui: ele e do painel, e um E solto fecharia esta tela para abrir a
     // cabine no mesmo quadro.
+    // Fechar pelo mesmo R que abriu segue o Q do diagnostico: a boca do painel
+    // que abriu a tela e a que a fecha.
     if (ctx.input.acaoPressionada(Acao::Voltar) || ctx.input.acaoPressionada(Acao::Pausar) ||
         ctx.input.acaoPressionada(Acao::Energia)) {
         ctx.audio.tocar(somVoltar_);
@@ -257,14 +259,6 @@ void PowerScene::desenhar(Context& ctx, float /*alpha*/) {
     desenharFileira(-1, "RESERVA", kCorReserva, reserva, Flight::kPontosDeEnergia - kSistemas,
                     reserva > 0 ? "ENERGIA PARADA" : nullptr, kCorAtencao, y);
 
-    // A dica nomeia os dois eixos separados: qual seta faz o que nao e obvio
-    // antes de experimentar. Fechar pelo mesmo R que abriu segue o Q do
-    // diagnostico -- a boca do painel que abriu a tela e a que a fecha.
-    const char* dica = ctx.input.temGamepad()
-                           ? "direcional: sistema e energia   B ou RB: voltar ao conves"
-                           : "cima/baixo: sistema   esq/dir: energia   Esc ou R: voltar";
-    ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, vidro.y + vidro.h + 12.0f, kCorTexto,
-                                   1.0f);
 }
 
 }  // namespace jogo

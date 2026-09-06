@@ -244,10 +244,6 @@ void RepairScene::desenhar(Context& ctx, float alpha) {
                   static_cast<int>(Flight::kCascoReparado * 100.0f + 0.5f), pontos_);
     ctx.fonte.desenharCentralizado(ctx.renderer, leitura, meio, y, kCorApagada, 1.0f);
 
-    const char* dica = ctx.input.temGamepad() ? "A: soldar   B ou X: voltar ao conves"
-                                              : "Espaco: soldar   Esc ou E: voltar ao conves";
-    ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, vidro.y + vidro.h + 12.0f, kCorTexto,
-                                   1.0f);
 }
 
 }  // namespace jogo

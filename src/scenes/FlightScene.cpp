@@ -275,16 +275,6 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
                                                : kCorHud,
                        1.0f);
 
-    const char* dica = ctx.input.temGamepad()
-                           ? "analogico: pilotar   A: turbo   B: voltar   desvie das rochas"
-                           : "WASD: pilotar   Espaco: turbo   Esc: voltar   desvie das rochas";
-    const SDL_FPoint tamanhoDica = ctx.fonte.medir(dica, 1.0f);
-    const float yDica = static_cast<float>(App::kAlturaLogica) - 24.0f;
-    draw::retanguloTela(ctx.renderer,
-                        SDL_FRect{cx - tamanhoDica.x * 0.5f - 8.0f, yDica - 4.0f,
-                                  tamanhoDica.x + 16.0f, tamanhoDica.y + 8.0f},
-                        kCorPainel);
-    ctx.fonte.desenharCentralizado(ctx.renderer, dica, cx, yDica, kCorHud, 1.0f);
 
     transicao_.desenhar(ctx.renderer);
 }

@@ -40,7 +40,9 @@ src/
 ├─ scene/                Scene (interface) e SceneStack (transições adiadas)
 └─ scenes/               MenuScene, InteriorScene, FlightScene, StatusScene,
                          RepairScene, PowerScene, PauseScene, GameOverScene,
-                         DebugScene (só no build debug)
+                         DebugScene (só no build debug); mais Transicao (a
+                         cortina) e Instrucoes (o bloco "COMO JOGAR" que o
+                         menu e a pausa desenham), que não são cenas
 ```
 
 Quem é dono de tudo é o `App`: ele cria janela, renderer e subsistemas, e passa
@@ -65,6 +67,10 @@ antes de escrever o `.cpp`.
 | `PauseScene` | a pausa | `PAUSADO` | `Esc` de qualquer lugar da partida |
 | `GameOverScene` | o fim da viagem | `NAVE PERDIDA` | o casco zerou |
 | `DebugScene` | a tela de depuração | `DEPURACAO` | `F3`, só no build debug |
+
+Nem todo arquivo de `src/scenes/` é uma cena: `Transicao` (a cortina) e
+`Instrucoes` (a lista de controles) são peças que as cenas usam, não telas na
+pilha, e por isso não entram na tabela acima nem seguem a regra dos três nomes.
 
 ### 1. O tipo e o arquivo
 

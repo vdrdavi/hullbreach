@@ -417,18 +417,6 @@ void InteriorScene::desenhar(Context& ctx, float alpha) {
     // HUD
     // "usar" e nao "painel": a mesma tecla abre o painel e a bancada, e qual
     // deles e quem diz e a tarja que flutua sobre o que estiver ao alcance.
-    const char* dica =
-        ctx.input.temGamepad()
-            ? "analogico: andar   X: usar   Y: nave   RB: energia   Start: pausar"
-            : "WASD: andar   E: usar   Q: nave   R: energia   Esc: pausar";
-    const SDL_FPoint tamanhoDica = ctx.fonte.medir(dica, 1.0f);
-    const float meio = static_cast<float>(App::kLarguraLogica) * 0.5f;
-    const float yDica = static_cast<float>(App::kAlturaLogica) - 24.0f;
-    draw::retanguloTela(ctx.renderer,
-                        SDL_FRect{meio - tamanhoDica.x * 0.5f - 8.0f, yDica - 4.0f,
-                                  tamanhoDica.x + 16.0f, tamanhoDica.y + 8.0f},
-                        kCorPainel);
-    ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, yDica, kCorHud, 1.0f);
 
     transicao_.desenhar(ctx.renderer);
 }

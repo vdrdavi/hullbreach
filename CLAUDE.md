@@ -176,6 +176,15 @@ pilha só mexe no topo) e, no topo, tomaria de quem está embaixo o passo do voo
 Enquanto a cortina está em cena, nenhuma tecla é lida — mas `Flight::atualizar`
 continua sendo chamado uma vez por passo.
 
+**Os controles se explicam em um lugar só.** `src/scenes/Instrucoes.*` é o bloco
+"COMO JOGAR" que a `MenuScene` e a `PauseScene` desenham — os dois momentos em
+que o jogo está parado. Não há tarja de controles no rodapé das telas de partida:
+elas ficavam na frente justamente enquanto se joga, e cada uma só sabia da
+própria tela, então a lista inteira não existia em lugar nenhum. Atalho novo
+entra ali, e não numa tarja nova. O que **fica** nas telas de jogo é o que é
+estado e não controle (o `[SUPERAQUECIDO]`, o convite sobre o móvel do convés) e
+a dica de navegação do próprio menu.
+
 **Coordenadas.** Tudo é desenhado em 640×360 lógicos com letterbox; o `App` já
 converte as coordenadas de mouse dos eventos. Não escreva em pixels de janela.
 

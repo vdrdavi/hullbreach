@@ -17,7 +17,6 @@ constexpr SDL_Color kCorVeu{6, 9, 16, 190};
 constexpr SDL_Color kCorVidro{10, 18, 30, 235};
 constexpr SDL_Color kCorBorda{60, 110, 150, 255};
 constexpr SDL_Color kCorTitulo{150, 230, 255, 255};
-constexpr SDL_Color kCorTexto{198, 226, 245, 255};
 constexpr SDL_Color kCorApagada{92, 110, 130, 255};
 constexpr SDL_Color kCorTrilho{14, 26, 40, 255};
 constexpr SDL_Color kCorPerda{235, 110, 105, 255};
@@ -123,12 +122,10 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
                                  ctx.fonte.alturaLinha(2.0f) + 4.0f + linha * 1.6f + linha +
                                  linha * 1.8f + kAlturaBarraTurbo + linha + linha * 1.4f;
     // A moldura se centra sozinha em vez de comecar num y fixo. Com um medidor
-    // so ela cabia em qualquer lugar; com dois, o literal que havia aqui empurrou
-    // a dica de rodape para fora da tela -- e empurraria de novo no proximo
-    // mostrador. O desconto de 10 e o respiro que a dica ocupa embaixo.
+    // so ela cabia em qualquer lugar; com dois, o literal que havia aqui jogou
+    // conteudo para fora da tela -- e jogaria de novo no proximo mostrador.
     const float alturaVidro = alturaConteudo + margem * 2.0f;
-    const SDL_FRect vidro{meio - 190.0f, (alturaTela - alturaVidro) * 0.5f - 10.0f, 380.0f,
-                          alturaVidro};
+    const SDL_FRect vidro{meio - 190.0f, (alturaTela - alturaVidro) * 0.5f, 380.0f, alturaVidro};
     draw::retanguloTela(ctx.renderer, vidro, kCorVidro);
     draw::retanguloTela(ctx.renderer, vidro, kCorBorda, false);
 
@@ -244,10 +241,6 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     ctx.fonte.desenharCentralizado(ctx.renderer, recarga, meio, y,
                                    quente ? kCorTurboQuente : kCorApagada, 1.0f);
 
-    const char* dica = ctx.input.temGamepad() ? "B ou Y: voltar ao conves"
-                                              : "Esc ou Q: voltar ao conves";
-    ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio, vidro.y + vidro.h + 12.0f, kCorTexto,
-                                   1.0f);
 }
 
 }  // namespace jogo

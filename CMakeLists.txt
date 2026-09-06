@@ -48,6 +48,7 @@ add_executable(jogo
     src/scenes/RepairScene.cpp
     src/scenes/GameOverScene.cpp
     src/scenes/Transicao.cpp
+    src/scenes/Instrucoes.cpp
 )
 
 target_include_directories(jogo PRIVATE src)
