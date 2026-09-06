@@ -59,7 +59,7 @@ antes de escrever o `.cpp`.
 | `MenuScene` | o menu | — | tela inicial |
 | `InteriorScene` | o convés | — | `Jogar` no menu |
 | `FlightScene` | a cabine | — | `E` no painel de pilotagem |
-| `StatusScene` | o diagnóstico do casco | `DIAGNOSTICO DO CASCO` | `Q` no painel de pilotagem |
+| `StatusScene` | o diagnóstico da nave | `DIAGNOSTICO DA NAVE` | `Q` no painel de pilotagem |
 | `PowerScene` | a repartição de energia | `REPARTICAO DE ENERGIA` | `R` no painel de pilotagem |
 | `RepairScene` | a bancada de reparo | `BANCADA DE REPARO` | `E` na bancada |
 | `PauseScene` | a pausa | `PAUSADO` | `Esc` de qualquer lugar da partida |
@@ -88,7 +88,7 @@ de solda". "O convés", e não "a cena do interior".
 
 Em prosa, o nome de ficção; em `código`, o tipo. Escrever "a cena de status" é o
 único jeito errado, porque mistura os dois e não é nenhum. Os dois nomes podem
-divergir de forma — `StatusScene` é *o diagnóstico do casco* —, e é para isso
+divergir de forma — `StatusScene` é *o diagnóstico da nave* —, e é para isso
 que a tabela existe: divergir tudo bem, ter que adivinhar não.
 
 ### 3. O título na tela
@@ -99,7 +99,7 @@ Aqui não há uma regra só, porque não são todas o mesmo tipo de tela:
   Quem diz onde o jogador está é a imagem; um rótulo por cima do convés seria
   legenda de foto.
 - **Os painéis do convés** (`StatusScene`, `PowerScene`, `RepairScene`) levam o
-  nome do assunto: substantivo, sem artigo e sem verbo — `DIAGNOSTICO DO CASCO`,
+  nome do assunto: substantivo, sem artigo e sem verbo — `DIAGNOSTICO DA NAVE`,
   não `DIAGNOSTICAR O CASCO` nem `PAINEL DO CASCO`. Eles se abrem por cima do
   convés, que continua visível atrás, e o título é o que diz qual dos três
   abriu.

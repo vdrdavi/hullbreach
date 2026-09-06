@@ -53,6 +53,16 @@ public:
     /// nunca menos que zero.
     float distanciaNaRota(Vec3 posicao, Vec3 frente, float corredor, float alcance) const;
 
+    /// Menor distancia entre a **superficie** de uma esfera de raio `raio`
+    /// varrendo o segmento `de` -> `para` e a superficie de qualquer rocha.
+    /// Negativa quando houve penetracao; `alcance` quando nada chega tao perto.
+    ///
+    /// O segmento, e nao o ponto final, porque a nave anda ate 4 unidades por
+    /// passo fixo: medindo so onde ela parou, uma passagem rente em turbo cai
+    /// **entre** duas amostras e some. Aqui a aproximacao maxima e exata para
+    /// qualquer velocidade, porque e a distancia ponto-segmento.
+    float distanciaVarrida(Vec3 de, Vec3 para, float raio, float alcance) const;
+
     /// Manda a rocha para outro canto do cubo, longe de `referencia`. E o que
     /// sobra de uma rocha atingida: o campo nunca perde nem ganha pedras.
     void reposicionar(int indice, Vec3 referencia);

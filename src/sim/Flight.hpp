@@ -162,6 +162,32 @@ public:
     /// Quantas rochas o casco inteiro aguenta com estes pontos de blindagem.
     static int batidasSuportadasDe(int pontos);
 
+    /// **O turbo e um bem escasso, e o unico jeito de reabastece-lo e passar
+    /// raspando numa rocha sem encostar nela.** Nao ha reserva que se recupere
+    /// sozinha com o tempo: quem quiser correr tem de ter chegado perto demais
+    /// antes, de proposito. E o unico lugar do jogo em que aproximar-se da
+    /// pedra e a coisa certa a fazer, e e ele que da ao campo de asteroides uma
+    /// segunda leitura -- ate aqui as rochas eram so aquilo de que se foge.
+    ///
+    /// Os tres numeros abaixo se lem juntos e foram escolhidos para isso:
+    /// o tanque cheio da **cinco segundos** de turbo (1 / kConsumoTurbo) e uma
+    /// raspada perfeita compra **um segundo** dele. Cinco passagens coladas por
+    /// tanque, e nada de graca.
+    static constexpr float kConsumoTurbo = 0.2f;      // tanque por segundo
+    static constexpr float kGanhoPorRaspao = 0.2f;    // tanque, na raspada colada
+    /// Quao perto e "de raspao": a distancia entre as duas **superficies**, e
+    /// nao entre os centros. Duas unidades e um raio de nave -- passar a menos
+    /// disso de uma pedra e o gesto que se esta premiando.
+    ///
+    /// A largura e o que decide se o turbo e escasso, e ela e apertada de
+    /// proposito: o tubo de raspao tem area 1,7 vez a do tubo de colisao, entao
+    /// o piloto automatico -- que voa reto e nao procura pedra nenhuma --
+    /// esbarra na zona raramente e quase sempre de longe, onde o premio tende a
+    /// zero. Quem enche o tanque e quem mira a rocha.
+    static constexpr float kZonaRaspao = 2.0f;
+    /// Quantos segundos de turbo o tanque cheio da.
+    static constexpr float kSegundosDeTurbo = 1.0f / kConsumoTurbo;
+
     /// Ate onde a bancada do conves leva o casco de volta. O reparo de campo
     /// nao deixa a nave nova: acima disto o estrago e de estaleiro, e a viagem
     /// segue com a marca das rochas que ja passaram. E o que impede a bancada
@@ -240,7 +266,26 @@ public:
     Pose interpolada(float alpha) const;
 
     float velocidade() const { return velocidade_; }
+    /// O turbo esta **aberto agora**. Nao e a tecla: sem reserva ele nao abre,
+    /// e a tecla segurada com o tanque vazio nao faz a nave andar mais.
     bool turbo() const { return turbo_; }
+
+    /// Quanto resta no tanque de turbo, de 0 a 1. O mostrador dele fica no
+    /// diagnostico, e nao na cabine: saber quanto sobrou custa largar os
+    /// controles e atravessar a nave, o mesmo pedagio que o casco ja cobra.
+    float reservaTurbo() const { return reservaTurbo_; }
+    /// Ha turbo para abrir? A cabine pergunta isto para responder a tecla de
+    /// quem apertou com o tanque seco -- resposta ao comando, e nao medidor.
+    bool temTurbo() const { return reservaTurbo_ > 0.0f; }
+    /// 1 no instante de uma raspada, decaindo ate zero. Como `batida()`, mas do
+    /// outro sinal: a cena o le para o clarao e o aviso de que o tanque subiu.
+    ///
+    /// O valor de partida nao e a qualidade crua da raspada, e sim
+    /// `0,5 + 0,5 * qualidade`. Uma passagem boa mas nao perfeita ainda **tem
+    /// de ser vista**: comecando na qualidade, uma raspada de 0,2 daria um
+    /// claro invisivel e o jogador concluiria que nao ganhou nada. A graduacao
+    /// fica onde ela nao pode sumir -- no tanto que o tanque sobe.
+    float raspao() const { return raspao_; }
     /// 0 no cruzeiro, 1 no turbo: a medida de esforco do motor.
     float fatorTurbo() const;
     /// 1 no instante da batida, decai ate zero. Cada cena sacode do seu jeito.
@@ -275,7 +320,11 @@ public:
     const AsteroidField& rochas() const { return rochas_; }
 
 private:
-    void checarColisao(Context& ctx);
+    /// Devolve se houve batida neste passo: a raspada precisa saber, porque
+    /// uma passagem que termina em pedra nao foi raspada nenhuma.
+    bool checarColisao(Context& ctx);
+    /// Acompanha a passagem rente em curso e premia quando ela termina.
+    void checarRaspao(Context& ctx, bool bateu);
 
     Pose pose_;
     Pose poseAnterior_;
@@ -288,6 +337,16 @@ private:
 
     float velocidade_{velocidadeDeCruzeiroDe(kPontoNeutro)};
     float batida_{0.0f};
+    /// O tanque de turbo, e o brilho da ultima raspada decaindo.
+    float reservaTurbo_{1.0f};
+    float raspao_{0.0f};
+    /// A raspada **em curso**: a menor distancia ja alcancada nesta passagem
+    /// (kZonaRaspao = nenhuma em curso) e se ela ainda vale. O premio so sai
+    /// quando a nave deixa a zona, porque e ai que se sabe quao perto ela
+    /// chegou de fato; encostar na pedra invalida a passagem inteira, que e o
+    /// que separa "de raspao" de "em cima".
+    float menorRaspao_{kZonaRaspao};
+    bool raspaoValido_{true};
     float casco_{1.0f};
     bool turbo_{false};
 
@@ -310,6 +369,7 @@ private:
     Audio::SomId somDestruicao_{0};
     Audio::SomId somSirene_{0};
     Audio::SomId somSonar_{0};
+    Audio::SomId somRaspao_{0};
     Audio::VozId vozAmbiente_{0};
     Audio::VozId vozSirene_{0};
 };

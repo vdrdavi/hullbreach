@@ -442,6 +442,43 @@ def gerar_sirene(nome: str, duracao: float = 0.5, taxa: int = 22050,
     print(f"{nome}: {duracao * 1000:.0f} ms @ {freq:.0f} Hz em loop (tom do alarme)")
 
 
+def gerar_raspao(nome: str, duracao: float = 0.3, taxa: int = 22050,
+                 semente: int = 0x5A5F) -> None:
+    """O premio da raspada: algo passando rente e um ganho registrado.
+
+    Duas camadas, e cada uma diz uma metade. O sopro e ruido marrom sob um
+    envelope de **passagem** -- sobe e desce, em vez de estalar e decair --, e e
+    ele que faz soar como uma coisa cruzando ao lado e nao como um impacto no
+    lugar. Por cima vai um *chirp* subindo de 700 a 1700 Hz: a nota ascendente e
+    o que diz "ganhou", e nenhum outro som da viagem se move em frequencia, o
+    que o separa da sirene (620 Hz) e do sonar (1480) sem depender de timbre.
+
+    A varredura e exponencial, e nao linear: uma oitava por oitava soa como uma
+    subida uniforme, enquanto somar hertz iguais parece frear no agudo.
+    """
+    total = int(taxa * duracao)
+    sopro = ruido_marrom(total, taxa, corte=650.0, semente=semente)
+    pico = max(abs(v) for v in sopro) or 1.0
+
+    amostras = []
+    fase = 0.0
+    for i in range(total):
+        u = i / total
+        # A passagem: nada, tudo, nada. O expoente estreita o meio, para o sopro
+        # ter um ponto de maxima aproximacao em vez de um plato.
+        envSopro = math.sin(math.pi * u) ** 1.6
+        # O ganho registrado: ataque quase instantaneo, cauda que segura o fim
+        # da nota tempo bastante para ela ser ouvida como nota.
+        envNota = min(1.0, u / 0.04) * math.exp(-3.2 * u)
+        freq = 700.0 * (1700.0 / 700.0) ** u
+        fase += 2.0 * math.pi * freq / taxa
+        amostras.append(0.5 * (sopro[i] / pico) * envSopro + 0.8 * math.sin(fase) * envNota)
+
+    maior = max(abs(v) for v in amostras) or 1.0
+    escrever_wav(nome, [v / maior * 0.8 for v in amostras], taxa)
+    print(f"{nome}: {duracao * 1000:.0f} ms (sopro + chirp 700->1700 Hz)")
+
+
 def main() -> None:
     for sub in ("textures", "fonts", "audio"):
         (ASSETS / sub).mkdir(parents=True, exist_ok=True)
@@ -475,6 +512,7 @@ def main() -> None:
     # tempo de ver os destrocos se afastarem.
     gerar_impacto("destruicao.wav", duracao=2.2, corte=52.0, semente=0xDEAD,
                   decaimento=2.0)
+    gerar_raspao("raspao.wav")
 
 
 if __name__ == "__main__":

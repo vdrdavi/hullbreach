@@ -8,8 +8,13 @@
 
 namespace jogo {
 
-/// A outra opcao do painel: o diagnostico do casco, aberto com Q no console e
-/// fechado com Esc. Mostra a integridade da nave, que cai a cada rocha.
+/// A outra opcao do painel: o diagnostico da nave, aberto com Q no console e
+/// fechado com Esc. Mostra os dois recursos da viagem -- a integridade do casco,
+/// que cai a cada rocha, e o tanque de turbo, que so sobe raspando nelas.
+///
+/// O medidor de turbo mora aqui, e longe da cabine, e isso e regra do recurso:
+/// saber quanto resta custa largar os controles e atravessar a nave, o mesmo
+/// pedagio que o casco sempre cobrou.
 ///
 /// Como a FlightScene, esta cena nao e dona do voo -- guarda uma referencia
 /// para o Flight da InteriorScene, que sempre sobrevive a ela (a pilha so
@@ -34,6 +39,10 @@ public:
 
 private:
     static constexpr float kAlturaBarra = 16.0f;
+    /// A barra do turbo e mais baixa que a do casco de proposito: as duas sao
+    /// medidores da mesma nave, mas perder o casco acaba a viagem e ficar sem
+    /// turbo so a deixa lenta. A hierarquia da tela tem de dizer isso.
+    static constexpr float kAlturaBarraTurbo = 10.0f;
     /// Com que taxa o ponteiro persegue o casco: lento o bastante para a queda
     /// ser vista, rapido o bastante para nao atrasar a leitura.
     static constexpr float kTaxaPonteiro = 5.0f;  // 1/s

@@ -185,6 +185,29 @@ float AsteroidField::distanciaNaRota(Vec3 posicao, Vec3 frente, float corredor,
     return maisProxima;
 }
 
+float AsteroidField::distanciaVarrida(Vec3 de, Vec3 para, float raio, float alcance) const {
+    const Vec3 passo = para - de;
+    const float passo2 = dot(passo, passo);
+    const float comprimentoPasso = std::sqrt(passo2);
+    float menor = alcance;
+    for (const Asteroide& rocha : asteroides_) {
+        const Vec3 w = rocha.posicao - de;
+        // Corte barato antes de qualquer raiz: do inicio do segmento, a rocha
+        // nao pode chegar a menos de |w| - |passo|. Se nem isso alcanca o que
+        // ja se tem, ela nao interessa -- e e o caso de praticamente todas as
+        // milhares de pedras do cubo, a cada passo.
+        const float limite = rocha.raio + raio + menor + comprimentoPasso;
+        if (dot(w, w) > limite * limite) {
+            continue;
+        }
+        // Ponto do segmento mais proximo do centro da rocha. Com a nave parada
+        // o segmento degenera em um ponto, e t = 0 e esse ponto.
+        const float t = passo2 > 0.0f ? std::clamp(dot(w, passo) / passo2, 0.0f, 1.0f) : 0.0f;
+        menor = std::min(menor, comprimento(w - passo * t) - rocha.raio - raio);
+    }
+    return menor;
+}
+
 void AsteroidField::reposicionar(int indice, Vec3 referencia) {
     if (indice < 0 || indice >= quantidade()) {
         return;

@@ -21,6 +21,11 @@ constexpr SDL_Color kCorTexto{198, 226, 245, 255};
 constexpr SDL_Color kCorApagada{92, 110, 130, 255};
 constexpr SDL_Color kCorTrilho{14, 26, 40, 255};
 constexpr SDL_Color kCorPerda{235, 110, 105, 255};
+/// O turbo tem cor propria, e fria: ele nao e uma faixa do casco vista de outro
+/// jeito, e sim outro recurso, com outra moeda. E a mesma cor com que a cabine
+/// anuncia a raspada, para o jogador ligar as duas telas sem que ninguem diga.
+constexpr SDL_Color kCorTurbo{130, 225, 255, 255};
+constexpr SDL_Color kCorTurboSeco{90, 118, 138, 255};
 
 /// Faixas do casco: a cor e a palavra saem da mesma fronteira, para o texto
 /// nunca dizer "integro" sobre uma barra ja alaranjada. A fronteira do critico
@@ -111,14 +116,21 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     // mexer em um, mexa no outro), mais a margem de cima e a de baixo.
     const float linha = ctx.fonte.alturaLinha(1.0f);
     const float margem = 14.0f;
-    const float alturaConteudo = linha * 2.0f + kAlturaBarra + linha +
-                                 ctx.fonte.alturaLinha(2.0f) + 4.0f + linha * 1.6f + linha;
-    const SDL_FRect vidro{meio - 190.0f, 88.0f, 380.0f, alturaConteudo + margem * 2.0f};
+    const float alturaConteudo = linha * 2.0f + linha * 1.8f + kAlturaBarra + linha +
+                                 ctx.fonte.alturaLinha(2.0f) + 4.0f + linha * 1.6f + linha +
+                                 linha * 1.8f + kAlturaBarraTurbo + linha + linha * 1.4f;
+    // A moldura se centra sozinha em vez de comecar num y fixo. Com um medidor
+    // so ela cabia em qualquer lugar; com dois, o literal que havia aqui empurrou
+    // a dica de rodape para fora da tela -- e empurraria de novo no proximo
+    // mostrador. O desconto de 10 e o respiro que a dica ocupa embaixo.
+    const float alturaVidro = alturaConteudo + margem * 2.0f;
+    const SDL_FRect vidro{meio - 190.0f, (alturaTela - alturaVidro) * 0.5f - 10.0f, 380.0f,
+                          alturaVidro};
     draw::retanguloTela(ctx.renderer, vidro, kCorVidro);
     draw::retanguloTela(ctx.renderer, vidro, kCorBorda, false);
 
     float y = vidro.y + margem;
-    ctx.fonte.desenharCentralizado(ctx.renderer, "DIAGNOSTICO DO CASCO", meio, y, kCorTitulo, 1.0f);
+    ctx.fonte.desenharCentralizado(ctx.renderer, "DIAGNOSTICO DA NAVE", meio, y, kCorTitulo, 1.0f);
     y += linha * 2.0f;
 
     // A barra: trilho, o casco que restou e -- entre ele e o ponteiro, que
@@ -126,7 +138,12 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     // palavra saem do ponteiro, e nao do casco, para nao contradizerem o numero
     // enquanto a queda esta sendo mostrada.
     const Faixa faixa = faixaDo(ponteiro_);
-    const SDL_FRect trilho{vidro.x + 22.0f, y, vidro.w - 44.0f, kAlturaBarra};
+    const SDL_FRect trilho{vidro.x + 22.0f, y + linha * 1.8f, vidro.w - 44.0f, kAlturaBarra};
+    // Os dois medidores se anunciam do mesmo jeito. Sem o rotulo, a barra de
+    // cima seria "a barra" e a de baixo "a outra": o painel deixou de ser sobre
+    // uma coisa so, e a tela tem de dizer isso antes de o jogador perguntar.
+    ctx.fonte.desenhar(ctx.renderer, "CASCO", trilho.x, y, kCorApagada, 1.0f);
+    y = trilho.y;
     draw::retanguloTela(ctx.renderer, trilho, kCorTrilho);
     draw::retanguloTela(
         ctx.renderer,
@@ -161,6 +178,61 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     std::snprintf(custo, sizeof(custo), "cada rocha custa %d%% do casco",
                   static_cast<int>(voo_.danoPorBatida() * 100.0f + 0.5f));
     ctx.fonte.desenharCentralizado(ctx.renderer, custo, meio, y, kCorApagada, 1.0f);
+    y += linha * 1.8f;
+
+    // O tanque de turbo. Ele mora aqui, e nao na cabine, e isso e a regra do
+    // recurso e nao uma escolha de layout: saber quanto resta custa largar os
+    // controles e atravessar a nave, exatamente o pedagio que o casco ja cobra.
+    // Na cabine o piloto sabe que ganhou (o clarao da raspada) e sabe quando
+    // acabou (a nave nao abre); quanto falta, so aqui.
+    const bool seco = !voo_.temTurbo();
+    // O mostrador reage a raspada como a palavra do casco reage a batida: o
+    // ponteiro pode subir na frente de quem esta lendo, porque a nave continua
+    // voando -- e raspando -- com o painel aberto.
+    const float brilho = voo_.raspao();
+    const SDL_Color corTurbo =
+        seco ? kCorTurboSeco
+             : SDL_Color{static_cast<Uint8>(kCorTurbo.r + (255 - kCorTurbo.r) * brilho),
+                         static_cast<Uint8>(kCorTurbo.g + (255 - kCorTurbo.g) * brilho),
+                         static_cast<Uint8>(kCorTurbo.b + (255 - kCorTurbo.b) * brilho), 255};
+
+    ctx.fonte.desenhar(ctx.renderer, "TURBO", trilho.x, y, kCorApagada, 1.0f);
+    char tanque[32];
+    std::snprintf(tanque, sizeof(tanque), "%.1f s",
+                  static_cast<double>(voo_.reservaTurbo() * Flight::kSegundosDeTurbo));
+    const SDL_FPoint medidaTanque = ctx.fonte.medir(tanque, 1.0f);
+    ctx.fonte.desenhar(ctx.renderer, tanque, trilho.x + trilho.w - medidaTanque.x, y, corTurbo,
+                       1.0f);
+    y += linha * 1.8f;
+
+    const SDL_FRect trilhoTurbo{trilho.x, y, trilho.w, kAlturaBarraTurbo};
+    draw::retanguloTela(ctx.renderer, trilhoTurbo, kCorTrilho);
+    draw::retanguloTela(
+        ctx.renderer,
+        SDL_FRect{trilhoTurbo.x, trilhoTurbo.y, trilhoTurbo.w * voo_.reservaTurbo(),
+                  trilhoTurbo.h},
+        corTurbo);
+    // As marcas de cada raspada colada, para o medidor dizer em que unidade ele
+    // fala: sao cinco divisoes, e uma passagem perfeita vale exatamente uma.
+    for (float marca = Flight::kGanhoPorRaspao; marca < 0.999f;
+         marca += Flight::kGanhoPorRaspao) {
+        draw::retanguloTela(ctx.renderer,
+                            SDL_FRect{trilhoTurbo.x + trilhoTurbo.w * marca, trilhoTurbo.y, 1.0f,
+                                      trilhoTurbo.h},
+                            kCorVidro);
+    }
+    draw::retanguloTela(ctx.renderer, trilhoTurbo, kCorBorda, false);
+    y += trilhoTurbo.h + linha;
+
+    // A unica forma de reabastecer, dita onde ela e acionavel. O numero sai das
+    // constantes do Flight, e nao de um literal: quem mexer no equilibrio nao
+    // pode deixar esta linha mentindo.
+    // Curto porque a moldura tem 380 px logicos e a fonte, 8 por celula: a frase
+    // que estava aqui tinha 47 caracteres e vazava pelos dois lados.
+    char recarga[72];
+    std::snprintf(recarga, sizeof(recarga), "raspar em rocha: ate %.1f s por passagem",
+                  static_cast<double>(Flight::kGanhoPorRaspao * Flight::kSegundosDeTurbo));
+    ctx.fonte.desenharCentralizado(ctx.renderer, recarga, meio, y, kCorApagada, 1.0f);
 
     const char* dica = ctx.input.temGamepad() ? "B ou Y: voltar ao conves"
                                               : "Esc ou Q: voltar ao conves";

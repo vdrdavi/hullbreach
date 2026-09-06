@@ -266,7 +266,7 @@ perguntas decidem o que acontece com as cenas de baixo:
 
 A `PauseScene` responde `true` para update e `false` para render: congela a
 partida sem escondê-la. A `FlightScene` responde `true` para os dois: a cabine
-cobre o interior por inteiro. A `StatusScene` — o diagnóstico do casco — responde
+cobre o interior por inteiro. A `StatusScene` — o diagnóstico da nave — responde
 como a pausa, mas com uma diferença que a seção 12 explica: bloqueando o update
 do convés, ela **herda a obrigação de dar o passo do voo**, e o faz.
 
@@ -370,7 +370,7 @@ Cada ação aceita até três teclas e dois botões; as posições não usadas f
 `UNKNOWN`/`INVALID`, que as consultas ignoram — assim um vínculo pode ser
 removido sem abrir buraco na tabela. **Acrescentar um comando ao jogo é
 acrescentar um valor ao enum, um nome na tabela `kNomes` e uma linha em
-`kPadrao`.** Foi só isso que custou o `Q` do diagnóstico do casco
+`kPadrao`.** Foi só isso que custou o `Q` do diagnóstico da nave
 (`Acao::Diagnostico`) e o `R` da repartição de energia (`Acao::Energia`), as duas
 da seção 13 — nenhuma cena precisou saber que teclas são essas. Como o nome da
 ação é a chave no arquivo de preferências, a ação nova entra **no fim do enum**:
@@ -1227,6 +1227,97 @@ A fronteira dos 30% é uma só: quem escreve `CRITICO` no diagnóstico (`faixaDo
 em `StatusScene.cpp`) lê a mesma `Flight::kCascoCritico`. A sirene não pode estar
 tocando sobre um mostrador que ainda diz `AVARIADO`.
 
+### O turbo é escasso, e só a rocha o reabastece
+
+O turbo já foi de graça: segurar a tecla abria o motor pelo tempo que se
+quisesse. Hoje ele é **o segundo recurso da viagem**, ao lado do casco, e a única
+maneira de repô-lo é passar **raspando** numa rocha sem encostar nela.
+
+Três números se leem juntos, e foram escolhidos para isso:
+
+| constante | valor | o que significa |
+| --- | --- | --- |
+| `kConsumoTurbo` | 0,2 tanque/s | o tanque cheio dá **cinco segundos** de turbo |
+| `kGanhoPorRaspao` | 0,2 tanque | uma raspada colada compra **um segundo** |
+| `kZonaRaspao` | 2 unidades | quão perto é "de raspão": um raio de nave |
+
+A troca que isso cria é o ponto inteiro da mudança. Até aqui as rochas eram
+apenas aquilo de que se foge, e a distância certa até elas era *a maior
+possível*. Agora o campo de asteroides é ao mesmo tempo o que cobra e a única
+fonte — para correr, é preciso ter chegado perto demais antes, de propósito.
+
+**A largura da zona é o que decide se o turbo é escasso**, e ela é apertada de
+caso pensado: o tubo de raspão tem 1,7 vez a área do tubo de colisão, então o
+piloto automático — que voa reto e não procura pedra nenhuma — quase não o
+encontra. Medido em 54 s de voo automático: **6 raspadas premiadas e 9 passagens
+anuladas por encostar**, num total de 3,6 s de turbo ganhos — 7% do tempo de voo.
+Voar reto não enche o tanque; quem enche é quem mira a rocha.
+
+#### A passagem é medida contra o segmento, não contra a posição
+
+`AsteroidField::distanciaVarrida` mede a menor distância entre a nave e uma rocha
+ao longo do **segmento** percorrido no passo, e não na posição em que a nave
+parou. Não é preciosismo: em turbo a nave anda até 4 unidades por passo fixo e a
+zona de raspão tem 2, então uma passagem colada cairia inteira *entre* duas
+amostras e simplesmente não existiria — e o jogador teria acabado de fazer, em
+alta velocidade, exatamente a coisa que o jogo pede, sem receber nada. Medindo a
+distância ponto-segmento, a aproximação máxima é exata em qualquer velocidade.
+
+Como isso percorre as milhares de rochas do cubo a cada passo, há um corte
+barato antes de qualquer raiz quadrada: do início do segmento, a rocha não pode
+chegar a menos de `|w| - |passo|`, e quem nem assim alcança o melhor já
+encontrado é descartado em quadrados. Sobram uma ou duas pedras por passo.
+
+#### O prêmio sai na saída da zona
+
+A raspada é uma pequena máquina de dois estados no `Flight`:
+
+- **dentro da zona**, só se acumula o mais perto que a nave já chegou
+  (`menorRaspao_`). Encostar (`distancia <= 0`) não termina a passagem, mas a
+  **invalida**: "de raspão" é passar sem tocar, e uma pedra raspada e batida no
+  mesmo movimento é uma batida;
+- **ao sair da zona**, e só então, é que se sabe quão perto ela chegou de fato —
+  e é aí que o prêmio sai, proporcional a `1 - menorRaspao / kZonaRaspao`.
+
+A invalidação olha a penetração com os próprios olhos em vez de perguntar se
+houve colisão, e por isso continua correta com a trapaça do F4 ligada:
+atravessar a pedra é encostar nela, mesmo com a colisão desligada.
+
+#### Como o jogador sabe que ganhou
+
+O medidor fica no diagnóstico, longe da cabine (seção 13), então **o piloto não
+vê o tanque enquanto pilota**. Isso é a regra do recurso, não uma escolha de
+layout — saber quanto resta custa largar os controles e atravessar a nave, o
+mesmo pedágio que o casco sempre cobrou. Mas o que ele *precisa* saber na hora, a
+cabine diz, e diz três vezes ao mesmo tempo:
+
+- um **clarão frio** cobre a tela, do outro lado do vocabulário do clarão da
+  batida: uma esquenta a imagem (255,150,90), a outra a esfria (130,225,255).
+  As duas coisas que a nave faz com uma rocha se distinguem sem se ler nada;
+- **`+ TURBO`** aparece *acima* da mira, e a mira acende junto. Acima porque
+  abaixo é onde a nave é desenhada — a câmera olha 14 unidades à frente, então o
+  casco ocupa o centro para baixo, e ali o texto pousava em cima dele;
+- o **som**, que sai do `Flight` e não da cena, pela mesma razão do baque e do
+  estouro: a nave raspa a pedra com o piloto no convés tanto quanto na cabine.
+
+O brilho não parte da qualidade crua da raspada, e sim de `0,5 + 0,5 ·
+qualidade`. Uma passagem boa mas não perfeita **tem de ser vista**: começando na
+qualidade, uma raspada de 0,2 daria um clarão invisível e o jogador concluiria
+que não ganhou nada. A graduação fica onde não pode sumir — no tanto que o tanque
+sobe, e no volume do som.
+
+O WAV é duas camadas, e cada uma diz uma metade. O sopro é ruído marrom sob um
+envelope de **passagem** — sobe e desce, em vez de estalar e decair —, e é ele
+que faz soar como uma coisa cruzando ao lado e não como um impacto no lugar. Por
+cima vai um *chirp* subindo de 700 a 1700 Hz: a nota ascendente é o que diz
+"ganhou", e nenhum outro som da viagem se move em frequência, o que o separa da
+sirene (620 Hz) e do sonar (1480) sem depender de timbre.
+
+Falta uma resposta que não é medidor nenhum: quem aperta o turbo com o tanque
+seco. `Flight::turbo()` não é a tecla — sem reserva ele não abre —, então a HUD
+da cabine compara as duas e escreve `[SEM TURBO]` em vermelho. Sem isso, o turbo
+escasso seria um controle que às vezes simplesmente não funciona.
+
 ### O sonar de rota
 
 No convés o jogador **não vê o campo**. A parede da nave é opaca, o piloto
@@ -1406,7 +1497,9 @@ baixo. Isso é seguro porque a pilha só desempilha do topo — o interior sempr
 sobrevive à cabine.
 
 O que ela acrescenta é a apresentação: a câmera de terceira pessoa, o campo de
-estrelas, a névoa, a HUD, o brilho do escapamento e o clarão da batida.
+estrelas, a névoa, a HUD, o brilho do escapamento e os **dois** clarões — o
+quente da batida e o frio da raspada (seção 12), que é também o único aviso de
+turbo que a cabine dá.
 
 A **névoa é regulada a cada quadro**, e não uma vez no `aoEntrar`: as duas pontas
 dela são a janela do sensor da nave (seção 12), que muda de tamanho quando a
@@ -1462,9 +1555,32 @@ seco de propósito — foi o que aconteceu com a nave.
 
 ### StatusScene
 
-A outra opção do painel: `Q`, junto ao console, abre o **diagnóstico do casco** —
-uma barra, o número em porcentagem e a palavra do estado (`INTEGRO`, `AVARIADO`,
-`CRITICO`), sobre o convés escurecido. `Esc` ou `Q` de novo fecham.
+A outra opção do painel: `Q`, junto ao console, abre o **diagnóstico da nave** —
+os **dois** recursos da viagem, sobre o convés escurecido: o casco (uma barra, o
+número em porcentagem e a palavra do estado — `INTEGRO`, `AVARIADO`, `CRITICO`) e
+o tanque de turbo. `Esc` ou `Q` de novo fecham.
+
+Ela se chamava *diagnóstico do casco* enquanto media um recurso só; passou a
+`DIAGNOSTICO DA NAVE` no commit que trouxe o turbo escasso, e o nome de ficção e
+a tarja do convés foram junto — os três nomes de uma tela mudam juntos ou não
+mudam (ARQUITETURA § Como se chamam as telas).
+
+**O medidor de turbo mora aqui, e isso é regra do recurso, não escolha de
+layout.** Saber quanto resta custa largar os controles e atravessar a nave, o
+mesmo pedágio que o casco sempre cobrou: na cabine o piloto sabe que *ganhou* (o
+clarão da raspada) e sabe quando *acabou* (a nave não abre), mas quanto falta, só
+aqui. A barra do turbo é mais baixa que a do casco de propósito — as duas medem a
+mesma nave, mas perder o casco acaba a viagem e ficar sem turbo só a deixa lenta,
+e a hierarquia da tela tem de dizer isso. As divisões que a cortam são cinco, e é
+o medidor declarando em que unidade fala: **uma passagem colada vale exatamente
+uma divisão.**
+
+Dois detalhes que a segunda barra obrigou. Os medidores agora se rotulam
+(`CASCO`, `TURBO`) — sem isso, a de cima seria "a barra" e a de baixo "a outra",
+e o painel deixou de ser sobre uma coisa só. E a moldura passou a se **centrar
+sozinha** em vez de começar num `y` fixo: com um medidor ela cabia em qualquer
+lugar, com dois o literal que havia ali empurrou a dica de rodapé para fora dos
+360 px da tela — e empurraria de novo no próximo mostrador.
 
 Ela repete a escolha da `FlightScene` por um motivo parecido: guarda uma
 **referência** para o `Flight` da cena de baixo, bloqueia o update dela e, por
@@ -1474,7 +1590,7 @@ estivesse aberto; chamando, a nave continua voando — e uma rocha derruba o
 mostrador na frente de quem está lendo. Continua valendo o invariante da seção
 12: **um passo de voo por passo fixo**, seja qual for a cena no topo.
 
-O único enfeite com lógica é o **ponteiro**. `ponteiro_` persegue `casco()` com a
+O enfeite com lógica é o **ponteiro**. `ponteiro_` persegue `casco()` com a
 mesma suavização exponencial de sempre, e a barra desenha três coisas: o trilho,
 o casco que restou (na cor da faixa) e, entre ele e o ponteiro que ainda está
 descendo, **o pedaço que a última rocha levou**, em vermelho. Sem isso a barra
@@ -1486,6 +1602,11 @@ Um detalhe de acabamento que é dívida da perseguição exponencial: ela chega 
 e **nunca encosta**, então o ponteiro é encaixado no casco quando a diferença cai
 abaixo de 0,001 — senão sobraria para sempre uma lasca de vermelho de menos de um
 pixel na ponta da barra.
+
+O mostrador do turbo reage à raspada como a palavra do casco reage à batida: ele
+clareia enquanto `raspao()` decai. Não é adereço — a nave continua voando, e
+raspando, com o painel aberto, e o tanque pode subir na frente de quem está
+lendo.
 
 Se o mostrador chega a zero, não há diagnóstico a fazer: esta cena **se troca**
 pela `FlightScene` (`substituir`, não `empilhar`). Trocar é o que deixa a pilha

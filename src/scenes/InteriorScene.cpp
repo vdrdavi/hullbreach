@@ -407,7 +407,7 @@ void InteriorScene::desenhar(Context& ctx, float alpha) {
     // por isso que a tarja sai retangular sem calculo a parte.
     if (pertoDoConsole()) {
         desenharConvite(ctx, camera,
-                        "[E] Assumir os controles\n[Q] Diagnostico do casco\n"
+                        "[E] Assumir os controles\n[Q] Diagnostico da nave\n"
                         "[R] Repartir a energia",
                         console_);
     } else if (pertoDaBancada()) {
@@ -419,8 +419,8 @@ void InteriorScene::desenhar(Context& ctx, float alpha) {
     // deles e quem diz e a tarja que flutua sobre o que estiver ao alcance.
     const char* dica =
         ctx.input.temGamepad()
-            ? "analogico: andar   X: usar   Y: casco   RB: energia   Start: pausar"
-            : "WASD: andar   E: usar   Q: casco   R: energia   Esc: pausar";
+            ? "analogico: andar   X: usar   Y: nave   RB: energia   Start: pausar"
+            : "WASD: andar   E: usar   Q: nave   R: energia   Esc: pausar";
     const SDL_FPoint tamanhoDica = ctx.fonte.medir(dica, 1.0f);
     const float meio = static_cast<float>(App::kLarguraLogica) * 0.5f;
     const float yDica = static_cast<float>(App::kAlturaLogica) - 24.0f;

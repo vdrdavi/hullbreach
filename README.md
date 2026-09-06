@@ -3,10 +3,13 @@
 Você anda pelo interior de uma nave em 2D, usa o painel de pilotagem do convés e
 a tela vira um voo 3D: um caça low poly atravessando um campo de estrelas gerado
 proceduralmente, desviando de asteroides. O mesmo painel também abre o
-diagnóstico do casco, que perde um pedaço a cada rocha — inclusive nas batidas
-que acontecem enquanto você anda lá dentro — e a repartição de energia, onde se
-decide quanto do motor, do sensor e da blindagem a nave vai ter: a soma é fixa,
-então toda vantagem sai do risco de outro lugar. No canto oposto do convés há uma
+diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
+inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
+turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da
+blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de
+outro lugar. **O turbo é escasso e não se recupera com o tempo:** a única forma
+de reabastecê-lo é passar raspando numa rocha sem encostar nela, o que faz do
+campo de asteroides a única fonte daquilo que ele mesmo cobra. No canto oposto do convés há uma
 bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
 lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a
 parede é o **sonar de rota**, um bipe que aperta a cadência conforme a próxima
@@ -14,7 +17,7 @@ rocha se aproxima. No fim do casco a nave passa a avisar: a sirene
 toca e o convés pisca em vermelho. Quando o casco acaba, a nave
 se despedaça na vista externa e a viagem termina ali.
 
-![Interior da nave: o convés de tiles com o painel de pilotagem ao fundo e as três opções que ele oferece — assumir os controles, o diagnóstico do casco e a repartição de energia](docs/interior.png)
+![Interior da nave: o convés de tiles com o painel de pilotagem ao fundo e as três opções que ele oferece — assumir os controles, o diagnóstico da nave e a repartição de energia](docs/interior.png)
 
 ![Voo 3D: o caça low poly triangular entre asteroides, com as estrelas riscando a tela ao redor](docs/voo.png)
 
@@ -248,6 +251,12 @@ medida.
 
 E ele **só toca no convés**. Na cabine a rocha está na tela: o sonar é o
 substituto da vista, não o acompanhamento dela.
+
+O som da **raspada** é o quarto, e o único de duas camadas: um sopro de ruído
+marrom sob um envelope de *passagem* — sobe e desce, em vez de estalar e decair —
+com um *chirp* subindo de 700 a 1700 Hz por cima. A nota ascendente é o que diz
+"ganhou", e nenhum outro som da viagem se move em frequência, o que o separa da
+sirene e do sonar sem depender de timbre.
 
 O WAV do ambiente é gerado em `tools/gen_assets.py` por um integrador com
 vazamento rodado **em círculo**: uma passada só para aquecer o estado e outra
