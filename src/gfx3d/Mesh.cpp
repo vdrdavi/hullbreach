@@ -1,6 +1,7 @@
 #include "gfx3d/Mesh.hpp"
 
 #include <algorithm>
+#include <map>
 
 #include "core/Aleatorio.hpp"
 
@@ -74,43 +75,108 @@ Mesh criarNaveLowPoly() {
     return nave;
 }
 
-Mesh criarAsteroideLowPoly(Uint32 semente) {
-    // Icosaedro: 12 vertices e 20 faces, o menor solido que ainda passa por
-    // rocha depois de amassado.
+namespace {
+
+/// Os doze vertices e as vinte faces do icosaedro, que as duas rochas partilham.
+Mesh icosaedro() {
     constexpr float t = 1.618034f;
-    Mesh rocha;
-    rocha.vertices = {
+    Mesh malha;
+    malha.vertices = {
         Vec3{-1.0f, t, 0.0f},  Vec3{1.0f, t, 0.0f},  Vec3{-1.0f, -t, 0.0f},
         Vec3{1.0f, -t, 0.0f},  Vec3{0.0f, -1.0f, t}, Vec3{0.0f, 1.0f, t},
         Vec3{0.0f, -1.0f, -t}, Vec3{0.0f, 1.0f, -t}, Vec3{t, 0.0f, -1.0f},
         Vec3{t, 0.0f, 1.0f},   Vec3{-t, 0.0f, -1.0f}, Vec3{-t, 0.0f, 1.0f},
     };
-    rocha.faces = {
+    malha.faces = {
         {0, 11, 5}, {0, 5, 1},  {0, 1, 7},   {0, 7, 10}, {0, 10, 11},
         {1, 5, 9},  {5, 11, 4}, {11, 10, 2}, {10, 7, 6}, {7, 1, 8},
         {3, 9, 4},  {3, 4, 2},  {3, 2, 6},   {3, 6, 8},  {3, 8, 9},
         {4, 9, 5},  {2, 4, 11}, {6, 2, 10},  {8, 6, 7},  {9, 8, 1},
     };
+    return malha;
+}
 
-    Aleatorio rng(semente);
-    // Amassa cada vertice ao longo do proprio raio e normaliza pelo maior: o
-    // raio 1 e o que faz a escala do asteroide servir de raio de colisao.
+/// Parte cada face em quatro, com os novos vertices empurrados para a esfera.
+/// Os pontos medios sao guardados por aresta: sem isso o mesmo ponto nasceria
+/// duas vezes, e o amassado seguinte o moveria de um jeito em cada face --
+/// abrindo fendas na superficie.
+void subdividir(Mesh& malha) {
+    std::map<std::pair<int, int>, int> meios;
+    const auto meio = [&](int a, int b) {
+        const auto chave = std::minmax(a, b);
+        const auto achado = meios.find({chave.first, chave.second});
+        if (achado != meios.end()) {
+            return achado->second;
+        }
+        const int indice = static_cast<int>(malha.vertices.size());
+        malha.vertices.push_back(normalizar(malha.vertices[static_cast<std::size_t>(a)] +
+                                            malha.vertices[static_cast<std::size_t>(b)]));
+        meios.emplace(std::pair<int, int>{chave.first, chave.second}, indice);
+        return indice;
+    };
+
+    std::vector<Mesh::Face> novas;
+    novas.reserve(malha.faces.size() * 4);
+    for (const Mesh::Face& f : malha.faces) {
+        const int ab = meio(f.a, f.b);
+        const int bc = meio(f.b, f.c);
+        const int ca = meio(f.c, f.a);
+        novas.push_back({f.a, ab, ca, f.cor});
+        novas.push_back({f.b, bc, ab, f.cor});
+        novas.push_back({f.c, ca, bc, f.cor});
+        novas.push_back({ab, bc, ca, f.cor});
+    }
+    malha.faces = std::move(novas);
+}
+
+/// Amassa ao longo do proprio raio e normaliza pelo maior, que e o que faz a
+/// escala de desenho valer como raio de colisao.
+void amassar(Mesh& malha, Aleatorio& rng, float minimo, float maximo) {
     float maior = 0.0f;
-    for (Vec3& v : rocha.vertices) {
-        v = normalizar(v) * rng.entre(0.62f, 1.10f);
+    for (Vec3& v : malha.vertices) {
+        v = normalizar(v) * rng.entre(minimo, maximo);
         maior = std::max(maior, comprimento(v));
     }
-    for (Vec3& v : rocha.vertices) {
+    for (Vec3& v : malha.vertices) {
         v = v * (1.0f / maior);
     }
+}
 
-    // Cinza terroso variando por face: sem textura, e o que tira a rocha da
-    // aparencia de solido chapado.
-    for (Mesh::Face& face : rocha.faces) {
-        const float tom = rng.entre(0.26f, 0.44f);
+/// Cinza terroso variando por face: sem textura, e o que tira a rocha da
+/// aparencia de solido chapado.
+void pintarComoRocha(Mesh& malha, Aleatorio& rng, float claro) {
+    for (Mesh::Face& face : malha.faces) {
+        const float tom = rng.entre(0.26f, 0.44f) * claro;
         face.cor = SDL_FColor{tom * 1.10f, tom * 1.00f, tom * 0.86f, 1.0f};
     }
+}
 
+}  // namespace
+
+Mesh criarMonolitoLowPoly(Uint32 semente) {
+    Mesh rocha = icosaedro();
+    Aleatorio rng(semente);
+    // Subdividir **antes** de amassar: os pontos medios nascem na esfera e o
+    // amassado desloca todos juntos, entao a superficie continua fechada.
+    subdividir(rocha);
+    // Amassado de leve, entre 0,88 e 1,0: e o que mantem a superficie perto da
+    // esfera de colisao. Com a faixa da rocha comum, um monolito bateria muito
+    // antes de encostar.
+    amassar(rocha, rng, 0.88f, 1.0f);
+    // Um tom mais claro que o das pequenas: a rocha que nao se desvia por
+    // manobra tem de ser reconhecida como outra coisa antes de estar perto.
+    pintarComoRocha(rocha, rng, 1.35f);
+    orientarFacesParaFora(rocha);
+    return rocha;
+}
+
+Mesh criarAsteroideLowPoly(Uint32 semente) {
+    // Icosaedro: 12 vertices e 20 faces, o menor solido que ainda passa por
+    // rocha depois de amassado.
+    Mesh rocha = icosaedro();
+    Aleatorio rng(semente);
+    amassar(rocha, rng, 0.62f, 1.10f);
+    pintarComoRocha(rocha, rng, 1.0f);
     orientarFacesParaFora(rocha);
     return rocha;
 }

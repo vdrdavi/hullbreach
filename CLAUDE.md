@@ -213,6 +213,16 @@ para a média em cena continuar na casa das 3300 que o resto do ajuste pressupõ
 Se mexer nas escalas ou no piso da densidade, meça a média em cena junto — é ela,
 e não o total, que é a dificuldade.
 
+Uma em cada cem é um **monólito** (raio 14 a 26, contra 7,5 da maior comum): a
+rocha que não se desvia no último segundo, e que dá ao sensor alto um valor que a
+pedra pequena não dá. Ela tem malha própria (`criarMonolitoLowPoly`) e isso é
+pela colisão, não pela aparência — a esfera de colisão é o raio de desenho, e na
+rocha comum a superfície chega a 0,50 dele; nessa escala a mesma folga viraria
+bater a treze unidades de uma pedra visivelmente longe. A malha do monólito é
+subdividida uma vez e amassada de leve, e fica entre 0,838 e 1,0 do raio, então a
+folga dele em unidades é a mesma da maior rocha comum. Se criar outra classe de
+rocha, meça essa folga antes de escolher o tamanho.
+
 E cada rocha tem uma **deriva própria** (`kDerivaMaxima`), com a magnitude
 sorteada ao quadrado para o campo não virar enxame — dois terços das pedras se
 leem como obstáculo e um terço, como movimento. Esse teto é **a colisão que o

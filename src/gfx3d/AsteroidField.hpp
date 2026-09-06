@@ -91,6 +91,8 @@ public:
 private:
     /// Ponto no cubo em torno de `centro`, a pelo menos `minimo` dele.
     Vec3 sortear(Vec3 centro, float minimo);
+    /// Sorteia o raio e a malha juntos: monolito tem malha de monolito.
+    void sortearTamanho(Asteroide& rocha);
     /// Uma deriva nova: direcao isotropica e magnitude com vies para o lento.
     Vec3 sortearDeriva();
 

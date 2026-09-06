@@ -34,4 +34,19 @@ Mesh criarNaveLowPoly();
 /// da esfera de colisao.
 Mesh criarAsteroideLowPoly(Uint32 semente);
 
+/// A rocha grande: o monolito que nao se desvia no ultimo segundo.
+///
+/// Nao e a mesma malha em outra escala, e o motivo e a **colisao**. Ela e uma
+/// esfera do raio de desenho, e no icosaedro amassado da rocha comum a
+/// superficie chega a estar a metade disso do centro -- uma folga de 3,8
+/// unidades numa pedra de raio 7,5, que ninguem nota. Na escala de um monolito
+/// a mesma proporcao viraria bater a quinze unidades de uma pedra que esta
+/// visivelmente longe.
+///
+/// Entao esta malha e feita para **caber na propria esfera**: o icosaedro e
+/// subdividido uma vez (20 faces viram 80, e a face plana se aproxima da
+/// curva) e o amassado e de leve, so o bastante para nao virar uma bola. O
+/// preco sao 60 faces a mais em poucas dezenas de rochas.
+Mesh criarMonolitoLowPoly(Uint32 semente);
+
 }  // namespace jogo

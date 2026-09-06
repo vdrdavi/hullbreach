@@ -17,6 +17,28 @@ constexpr float kDistanciaSegura = 55.0f;
 constexpr float kRaioMinimo = 2.2f;
 constexpr float kRaioMaximo = 7.5f;
 
+// O monolito: a rocha que nao se desvia no ultimo segundo.
+//
+// A pedra comum, com ate 7,5 de raio, cabe no campo de manobra -- da para
+// deixar para depois e ainda escapar. Estas nao: com 14 a 26 de raio, contra os
+// 2 da nave, quando ela ja esta perto nao ha guinada que resolva. Ou se decide
+// cedo ou se bate, e e isso que as torna outra coisa e nao so uma pedra maior.
+//
+// Sao **uma em cem** de proposito. A conta que manda e a secao de choque, que
+// cresce com o quadrado do raio: uma de raio 20 tem trinta vezes a area de
+// travessia de uma de raio 4,85, entao uma frequencia que parece modesta na
+// contagem vira comum na rota. A 1% e uma a cada trinta e poucos segundos de
+// voo reto -- rara o bastante para ser um acontecimento, comum o bastante para
+// o sensor alto valer a pena.
+constexpr float kRaioGrandeMinimo = 14.0f;
+constexpr float kRaioGrandeMaximo = 26.0f;
+constexpr float kChanceGrande = 0.01f;
+
+/// Quantas malhas de monolito, e onde elas comecam em `malhas_`. Ficam no mesmo
+/// vetor das outras: o indice em Asteroide::malha ja diz qual e qual, e nao ha
+/// segunda lista para manter em dia.
+constexpr int kVariedadesGrandes = 3;
+
 /// Quanto a rocha mais rapida deriva. **Este numero e limitado pela colisao, e
 /// nao pelo gosto.**
 ///
@@ -160,6 +182,21 @@ void AsteroidField::ativarPelaDensidade(Asteroide& rocha) {
     ativas_ += (rocha.ativa ? 1 : 0) - (antes ? 1 : 0);
 }
 
+void AsteroidField::sortearTamanho(Asteroide& rocha) {
+    // Tamanho e malha saem juntos, e num lugar so: eles se escolhem um ao outro
+    // -- monolito tem malha de monolito -- e os tres caminhos que reciclam uma
+    // rocha (o sorteio inicial, o wrap e a pedra atingida) precisam concordar.
+    if (rng_.unitario() < kChanceGrande) {
+        rocha.raio = rng_.entre(kRaioGrandeMinimo, kRaioGrandeMaximo);
+        rocha.malha = static_cast<std::size_t>(kVariedades) +
+                      static_cast<std::size_t>(rng_.proximo() %
+                                               static_cast<Uint32>(kVariedadesGrandes));
+    } else {
+        rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
+        rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
+    }
+}
+
 Vec3 AsteroidField::sortearDeriva() {
     // Direcao isotropica por sorteio com recusa dentro da esfera: sortear os
     // tres eixos e usar direto daria mais rochas indo para os cantos do cubo
@@ -193,9 +230,12 @@ void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
     rng_ = Aleatorio(semente);
 
     malhas_.clear();
-    malhas_.reserve(kVariedades);
+    malhas_.reserve(static_cast<std::size_t>(kVariedades + kVariedadesGrandes));
     for (int i = 0; i < kVariedades; ++i) {
         malhas_.push_back(criarAsteroideLowPoly(rng_.proximo()));
+    }
+    for (int i = 0; i < kVariedadesGrandes; ++i) {
+        malhas_.push_back(criarMonolitoLowPoly(rng_.proximo()));
     }
 
     asteroides_.clear();
@@ -203,13 +243,12 @@ void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
     for (int i = 0; i < quantidade; ++i) {
         Asteroide rocha;
         rocha.posicao = sortear(Vec3{}, kDistanciaSegura);
-        rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
+        sortearTamanho(rocha);
         rocha.yaw = rng_.entre(0.0f, 6.2831853f);
         rocha.pitch = rng_.entre(0.0f, 6.2831853f);
         rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
         rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
         rocha.velocidade = sortearDeriva();
-        rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
         rocha.ativa = false;
         asteroides_.push_back(rocha);
     }
@@ -263,11 +302,10 @@ void AsteroidField::centralizar(Vec3 posicao) {
             if (!virouZ) {
                 envolvido.z = rng_.entre(-raio_, raio_);
             }
-            rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
+            sortearTamanho(rocha);
             rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
             rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
             rocha.velocidade = sortearDeriva();
-            rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
             rocha.posicao = posicao + envolvido;
             // Atravessar a borda e o momento em que a rocha pergunta se ha campo
             // onde ela reapareceu. E o unico momento: dai em diante ela carrega a
@@ -368,9 +406,8 @@ void AsteroidField::reposicionar(int indice, Vec3 referencia) {
     // se materializava pronta na frente do jogador logo depois da batida --
     // justo quando ele esta olhando.
     rocha.posicao = sortear(referencia, raio_);
-    rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
+    sortearTamanho(rocha);
     rocha.velocidade = sortearDeriva();
-    rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
     ativarPelaDensidade(rocha);
 }
 

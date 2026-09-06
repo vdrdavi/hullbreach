@@ -3,9 +3,10 @@
 Você anda pelo interior de uma nave em 2D, usa o painel de pilotagem do convés e
 a tela vira um voo 3D: um caça low poly atravessando um campo de estrelas gerado
 proceduralmente, desviando de asteroides — que não vêm em chuva constante: o
-campo tem bolsões e veios, a viagem alterna vazio e aperto, e as pedras derivam,
-então desviar é prever onde elas vão estar. O mesmo painel também abre o
-diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
+campo tem bolsões e veios, a viagem alterna vazio e aperto, as pedras derivam
+(desviar é prever onde elas vão estar) e, de vez em quando, aparece um monólito
+que não se contorna no último segundo: ou você decidiu cedo, ou bateu. O mesmo
+painel também abre o diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
 inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
 turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da
 blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de

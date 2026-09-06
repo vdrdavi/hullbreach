@@ -868,6 +868,41 @@ Então quem atravessa a borda é **sorteado de novo** nos eixos que *não* virar
 e ganha raio, giro e malha novos. A troca acontece a uma aresta inteira de
 distância, dentro da névoa — longe dos olhos.
 
+**O monólito: a rocha que não se desvia no último segundo.** A pedra comum, com
+até 7,5 de raio, cabe no campo de manobra — dá para deixar para depois e ainda
+escapar. Uma em cada cem tem entre 14 e 26, contra os 2 da nave, e com ela perto
+não há guinada que resolva: ou se decide cedo ou se bate. É isso que a torna
+outra coisa, e não só uma pedra maior — e é o que faz o sensor alto valer de um
+jeito que a pedra pequena não faz, porque o que ele compra é justamente o tempo
+de decidir.
+
+**Uma em cem parece pouco e não é**, porque a conta que manda é a seção de
+choque, que cresce com o quadrado do raio: uma de raio 20 tem trinta vezes a área
+de travessia de uma de raio 4,85. Medido, dá uma colisão a cada 64 s de voo reto
+— rara o bastante para ser um acontecimento, comum o bastante para o sensor
+importar.
+
+**A malha do monólito não é a mesma em outra escala**, e o motivo é a colisão.
+Ela é uma esfera do raio de desenho, e no icosaedro amassado da rocha comum a
+superfície chega a estar a **0,50** desse raio: uma folga de 3,8 unidades numa
+pedra de 7,5, que ninguém nota. Na escala de um monólito a mesma proporção
+viraria bater a treze unidades de uma pedra visivelmente longe.
+
+Então `criarMonolitoLowPoly` faz uma malha que **cabe na própria esfera**: o
+icosaedro é subdividido uma vez (20 faces viram 80, e a face plana se aproxima da
+curva) e o amassado é de leve, entre 0,88 e 1,0. Medido, a superfície fica entre
+**0,838 e 1,000** do raio — a folga do maior monólito é 4,2 unidades, contra 3,8
+da maior rocha comum. A pedra grande não é mais injusta que a que já existia.
+
+A subdivisão guarda os pontos médios **por aresta**: sem isso o mesmo ponto
+nasceria duas vezes e o amassado seguinte o moveria de um jeito em cada face,
+abrindo fendas na superfície. E ela vem **antes** do amassado, para os pontos
+novos nascerem na esfera e serem deslocados junto com o resto.
+
+Custa o mesmo: 3,15 a 3,40 ms de trabalho por quadro em release, contra 3,2 a 3,4
+sem os monólitos; o pior quadro subiu de 5,93 para 6,19 ms, que é um deles
+enchendo a tela.
+
 **A rocha não está parada no vazio.** Cada uma tem uma **deriva própria**, e é
 isso que separa desviar de um obstáculo de prever onde ele estará: a pedra que
 cruza a rota se lê de um jeito diferente da que espera parada nela.
