@@ -104,20 +104,15 @@ congelou (adiante). A `FlightScene` guarda uma referência para o `Flight` da
 cena de baixo; isso é seguro porque a pilha só desempilha do topo, então o
 interior sempre sobrevive à cabine.
 
-**O turbo é escasso e só a rocha o reabastece.** O tanque (`Flight::reservaTurbo`)
-dá cinco segundos de turbo, não se recupera com o tempo e só sobe passando de
-raspão numa rocha **sem encostar** — uma passagem colada compra um segundo. Isso
-dá ao campo de asteroides uma segunda leitura: ele é o que cobra e a única fonte.
-A medida é contra o **segmento** do passo (`AsteroidField::distanciaVarrida`) e
-não contra a posição final, senão em turbo a nave pula a zona inteira entre dois
-passos e a passagem não existe. O prêmio sai quando a nave **deixa** a zona, que
-é quando se sabe quão perto ela chegou; encostar invalida a passagem inteira. A
-largura da zona (`kZonaRaspao`) é o que decide se o turbo é escasso — alargá-la
-faz o piloto automático encher o tanque sozinho, e aí não há recurso nenhum. O
-medidor fica no diagnóstico, longe da cabine, de propósito: é o mesmo pedágio que
-o casco cobra. A cabine só diz que *ganhou* (clarão frio, `+ TURBO` acima da mira
-— abaixo é onde a nave é desenhada) e que a tecla não abriu o motor
-(`[SEM TURBO]`), que é resposta ao comando e não medidor.
+**O turbo é escasso.** Ele sai de um tanque (`Flight::reservaTurbo`) que o uso
+esvazia e que se refaz sozinho enquanto o motor está fechado: cinco segundos de
+turbo, quinze para encher do vazio — três de espera por segundo de motor aberto.
+Não há carência antes de a recarga começar, e não precisa haver: o orçamento é a
+razão entre as duas taxas, então pulsar a tecla não rende mais que segurá-la.
+`Flight::turbo()` deixou de ser a tecla — sem reserva o motor não abre —, e por
+isso a HUD da cabine compara as duas e escreve `[SEM TURBO]`: é resposta ao
+comando, não medidor. O medidor fica no diagnóstico, longe da cabine, de
+propósito: é o mesmo pedágio que o casco cobra.
 
 **O fim da nave.** Cada batida tira 0,125 do casco; `Flight::destruida()` é
 `casco() <= 0`, e não um segundo estado a manter em dia. A partir daí o `Flight`

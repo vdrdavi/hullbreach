@@ -79,12 +79,6 @@ constexpr float kIntervaloSonarPerto = 0.10f;  // s, com a rocha encostando
 constexpr float kGanhoSonarLonge = 0.5f;
 constexpr float kGanhoSonarPerto = 1.0f;
 
-// A raspada. O brilho decai mais devagar que o da batida (3,4/s): a batida se
-// anuncia sozinha pelo tranco e pelo som, enquanto o premio da raspada e uma
-// palavra que precisa dar tempo de ser lida.
-constexpr float kDecaimentoRaspao = 1.6f;  // 1/s
-constexpr float kGanhoRaspaoLonge = 0.4f;
-constexpr float kGanhoRaspaoPerto = 1.0f;
 
 /// Suavizacao exponencial estavel em passo fixo.
 float aproximar(float atual, float alvo, float taxa, float dt) {
@@ -138,13 +132,8 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     somSonar_ = ctx.audio.carregar("audio/sonar.wav");
 
     // A viagem comeca com o tanque cheio, e nao vazio: o turbo precisa ser
-    // usado uma vez para que faltar depois signifique alguma coisa. Quem nunca
-    // sentiu a nave abrir nao vai atras de rocha para reabastecer.
+    // usado uma vez para que faltar depois signifique alguma coisa.
     reservaTurbo_ = 1.0f;
-    raspao_ = 0.0f;
-    menorRaspao_ = kZonaRaspao;
-    raspaoValido_ = true;
-    somRaspao_ = ctx.audio.carregar("audio/raspao.wav");
 }
 
 void Flight::encerrar(Context& ctx) {
@@ -211,8 +200,15 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // segue no cruzeiro. Quem apertou merece a resposta, mas ela e da
         // cabine (que compara a tecla com este `turbo_`), e nao daqui.
         turbo_ = comando.turbo && temTurbo();
+        // O tanque esvazia enquanto o motor esta aberto e se refaz sozinho
+        // enquanto esta fechado -- tres vezes mais devagar do que gasta. Nao ha
+        // carencia antes de a recarga comecar: sem ela, pulsar a tecla nao
+        // rende nada de extra, porque o orcamento e a razao entre as duas taxas
+        // e nao o jeito de gastar.
         if (turbo_) {
             reservaTurbo_ = std::max(0.0f, reservaTurbo_ - kConsumoTurbo * dt);
+        } else {
+            reservaTurbo_ = std::min(1.0f, reservaTurbo_ + kRecargaTurbo * dt);
         }
         // O alvo vem da reparticao, e a rampa que ja estava aqui pelo turbo
         // cuida da mudanca de graca: mexer no motor no conves nao da um
@@ -232,19 +228,10 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     // colisao: sem batida nao ha baque, som nem estrago, e a nave atravessa o
     // campo. Fora dessa build a condicao e uma constante falsa e some na
     // compilacao.
-    bool bateu = false;
     if (!destruida() && !invencivel()) {
-        bateu = checarColisao(ctx);
-    }
-    // A raspada e medida mesmo com a trapaca do F4 ligada, e por isso ela ve a
-    // penetracao com os proprios olhos (distancia <= 0) em vez de perguntar se
-    // houve batida: atravessar a pedra e encostar nela, e nao rende premio
-    // nenhum nem com a colisao desligada.
-    if (!destruida()) {
-        checarRaspao(ctx, bateu);
+        checarColisao(ctx);
     }
     batida_ = std::max(0.0f, batida_ - kDecaimentoBatida * dt);
-    raspao_ = std::max(0.0f, raspao_ - kDecaimentoRaspao * dt);
 
     // O ambiente entra do zero, acompanha o esforco do motor e cai quando o
     // casco fica no caminho. A rampa e aqui para a passagem entre o convés e a
@@ -332,10 +319,10 @@ void Flight::reparar(float quanto) {
     casco_ = std::min(kCascoReparado, casco_ + quanto);
 }
 
-bool Flight::checarColisao(Context& ctx) {
+void Flight::checarColisao(Context& ctx) {
     const int atingida = rochas_.colisao(pose_.posicao, kRaioNave);
     if (atingida < 0) {
-        return false;
+        return;
     }
 
     // A rocha vai para outro canto do cubo em vez de sumir: o campo mantem a
@@ -357,49 +344,6 @@ bool Flight::checarColisao(Context& ctx) {
         ctx.audio.tocar(somDestruicao_);
     } else {
         ctx.audio.tocar(somImpacto_, abafado_ ? 0.55f : 1.0f);
-    }
-    return true;
-}
-
-void Flight::checarRaspao(Context& ctx, bool bateu) {
-    // Contra o **segmento** do passo, e nao contra a posicao final: em turbo a
-    // nave anda ate 4 unidades por passo e a zona de raspao tem 2, entao uma
-    // passagem colada cairia inteira entre duas amostras e nao existiria. Medir
-    // o segmento faz a aproximacao maxima ser exata em qualquer velocidade.
-    const float distancia = rochas_.distanciaVarrida(poseAnterior_.posicao, pose_.posicao,
-                                                     kRaioNave, kZonaRaspao);
-
-    if (distancia < kZonaRaspao) {
-        // Dentro da zona: a passagem esta em curso e so se acumula o mais perto
-        // que ela ja chegou. Encostar (distancia <= 0) nao a termina -- ela
-        // segue ate a saida, mas ja nao vale premio: "de raspao" e passar sem
-        // tocar, e uma pedra raspada e batida no mesmo movimento e uma batida.
-        menorRaspao_ = std::min(menorRaspao_, distancia);
-        if (distancia <= 0.0f || bateu) {
-            raspaoValido_ = false;
-        }
-        return;
-    }
-
-    // Fora da zona. Se havia passagem em curso, ela acabou de terminar, e so
-    // agora se sabe quao perto a nave chegou de fato -- e por isso que o premio
-    // sai na saida, e nao na entrada.
-    if (menorRaspao_ < kZonaRaspao) {
-        if (raspaoValido_) {
-            const float qualidade = std::clamp(1.0f - menorRaspao_ / kZonaRaspao, 0.0f, 1.0f);
-            reservaTurbo_ = std::min(1.0f, reservaTurbo_ + kGanhoPorRaspao * qualidade);
-            // Sempre visivel, melhor quanto mais perto: veja Flight::raspao().
-            raspao_ = 0.5f + 0.5f * qualidade;
-            // O som sai daqui, e nao da cabine, pela mesma razao do baque e do
-            // estouro: a nave raspa a pedra com o piloto no conves tanto quanto
-            // na cabine, e o premio nao pode depender de quem estava desenhando.
-            ctx.audio.tocar(somRaspao_,
-                            (kGanhoRaspaoLonge +
-                             (kGanhoRaspaoPerto - kGanhoRaspaoLonge) * qualidade) *
-                                (abafado_ ? 0.55f : 1.0f));
-        }
-        menorRaspao_ = kZonaRaspao;
-        raspaoValido_ = true;
     }
 }
 

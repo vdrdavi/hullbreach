@@ -7,9 +7,9 @@ diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
 inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
 turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da
 blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de
-outro lugar. **O turbo é escasso e não se recupera com o tempo:** a única forma
-de reabastecê-lo é passar raspando numa rocha sem encostar nela, o que faz do
-campo de asteroides a única fonte daquilo que ele mesmo cobra. No canto oposto do convés há uma
+outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco segundos e leva
+quinze para se refazer, então correr deixou de ser de graça e virou uma decisão
+sobre quando correr. No canto oposto do convés há uma
 bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
 lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a
 parede é o **sonar de rota**, um bipe que aperta a cadência conforme a próxima
@@ -251,12 +251,6 @@ medida.
 
 E ele **só toca no convés**. Na cabine a rocha está na tela: o sonar é o
 substituto da vista, não o acompanhamento dela.
-
-O som da **raspada** é o quarto, e o único de duas camadas: um sopro de ruído
-marrom sob um envelope de *passagem* — sobe e desce, em vez de estalar e decair —
-com um *chirp* subindo de 700 a 1700 Hz por cima. A nota ascendente é o que diz
-"ganhou", e nenhum outro som da viagem se move em frequência, o que o separa da
-sirene e do sonar sem depender de timbre.
 
 O WAV do ambiente é gerado em `tools/gen_assets.py` por um integrador com
 vazamento rodado **em círculo**: uma passada só para aquecer o estado e outra

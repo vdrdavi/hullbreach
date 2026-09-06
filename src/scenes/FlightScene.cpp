@@ -16,10 +16,6 @@ namespace {
 constexpr SDL_Color kCorEspaco{5, 6, 14, 255};
 constexpr SDL_Color kCorHud{198, 226, 245, 255};
 constexpr SDL_Color kCorPainel{8, 12, 24, 170};
-/// O frio da raspada, contra o quente do clarao da batida (255,150,90). As duas
-/// coisas que a nave faz com uma rocha tem de ser lidas sem se ler nada: uma
-/// esquenta a tela, a outra a esfria.
-constexpr SDL_Color kCorRaspao{130, 225, 255, 255};
 
 /// Suavizacao exponencial estavel em passo fixo.
 float aproximar(float atual, float alvo, float taxa, float dt) {
@@ -235,19 +231,6 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
                             SDL_Color{255, 150, 90, alfa});
     }
 
-    // E o clarao da raspada, do outro lado do mesmo vocabulario: mais fraco que
-    // o da batida de proposito, porque ele acompanha uma boa noticia e nao um
-    // susto -- e porque a nave nao sacode, ao contrario da batida.
-    if (voo_.raspao() > 0.0f) {
-        const float brilho = voo_.raspao() * voo_.raspao();
-        draw::retanguloTela(ctx.renderer,
-                            SDL_FRect{0.0f, 0.0f, static_cast<float>(App::kLarguraLogica),
-                                      static_cast<float>(App::kAlturaLogica)},
-                            SDL_Color{kCorRaspao.r, kCorRaspao.g, kCorRaspao.b,
-                                      static_cast<Uint8>(std::clamp(brilho * 55.0f, 0.0f,
-                                                                    255.0f))});
-    }
-
     // Da destruicao em diante nao ha o que pilotar nem o que medir: a mira e a
     // HUD saem de cena e sobra a vista.
     if (morrendo_) {
@@ -258,31 +241,11 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     // Mira
     const float cx = static_cast<float>(App::kLarguraLogica) * 0.5f;
     const float cy = static_cast<float>(App::kAlturaLogica) * 0.5f;
-    // A mira acende junto: o clarao de tela inteira e periferico, e o olho do
-    // piloto esta aqui no centro. Sao a mesma informacao em dois lugares porque
-    // o medidor de turbo nao esta nesta tela -- este e todo o aviso que a cabine
-    // da de que o tanque subiu.
-    const float aceso = voo_.raspao();
-    const SDL_Color corMira{
-        static_cast<Uint8>(120 + (kCorRaspao.r - 120) * aceso),
-        static_cast<Uint8>(200 + (kCorRaspao.g - 200) * aceso),
-        static_cast<Uint8>(230 + (kCorRaspao.b - 230) * aceso),
-        static_cast<Uint8>(120 + (255 - 120) * aceso)};
+    const SDL_Color corMira{120, 200, 230, 120};
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 6.0f, cy - 0.5f, 4.0f, 1.0f}, corMira);
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx + 2.0f, cy - 0.5f, 4.0f, 1.0f}, corMira);
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy - 6.0f, 1.0f, 4.0f}, corMira);
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy + 2.0f, 1.0f, 4.0f}, corMira);
-
-    // O aviso da raspada vai **acima** da mira. Abaixo dela e onde a nave e
-    // desenhada -- a camera olha 14 unidades a frente, entao o casco ocupa o
-    // centro para baixo --, e o texto pousava em cima dele, ilegivel.
-    if (voo_.raspao() > 0.0f) {
-        const Uint8 alfa =
-            static_cast<Uint8>(std::clamp(voo_.raspao() * 320.0f, 0.0f, 255.0f));
-        ctx.fonte.desenharCentralizado(
-            ctx.renderer, "+ TURBO", cx, cy - 26.0f,
-            SDL_Color{kCorRaspao.r, kCorRaspao.g, kCorRaspao.b, alfa}, 1.0f);
-    }
 
     // HUD. O sufixo responde a **tecla**, e nao ao tanque: quem aperta o turbo
     // com o tanque seco precisa saber por que a nave nao abriu, e essa e uma
@@ -304,8 +267,8 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
                        1.0f);
 
     const char* dica = ctx.input.temGamepad()
-                           ? "analogico: pilotar   A: turbo   B: voltar   raspe para reabastecer"
-                           : "WASD: pilotar   Espaco: turbo   Esc: voltar   raspe para reabastecer";
+                           ? "analogico: pilotar   A: turbo   B: voltar   desvie das rochas"
+                           : "WASD: pilotar   Espaco: turbo   Esc: voltar   desvie das rochas";
     const SDL_FPoint tamanhoDica = ctx.fonte.medir(dica, 1.0f);
     const float yDica = static_cast<float>(App::kAlturaLogica) - 24.0f;
     draw::retanguloTela(ctx.renderer,
