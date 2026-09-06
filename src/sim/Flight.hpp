@@ -83,6 +83,11 @@ public:
     /// fixo: a 240 u/s a nave anda 4,0 unidades por passo, e a menor colisao
     /// possivel e 4,2 (raio 2,0 da nave mais 2,2 da menor rocha). Acima disso
     /// ela comecaria a atravessar pedra sem nunca encostar nela.
+    ///
+    /// O que conta e a velocidade **relativa**, e desde que as rochas derivam
+    /// (AsteroidField::kDerivaMaxima) parte da folga e delas: 4,2 por passo dao
+    /// 252 u/s de relativa, este teto usa 240 e a rocha mais rapida vindo de
+    /// frente usa mais 6. Mexer em um dos dois numeros e mexer no outro.
     static constexpr float kTurboPorPonto[kPontoMaximo + 1] = {95.0f, 95.0f, 185.0f, 215.0f,
                                                                240.0f};
     /// O sensor e uma **janela de visao**, e nao um so numero: o par abaixo e o

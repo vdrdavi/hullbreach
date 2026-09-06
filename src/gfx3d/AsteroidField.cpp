@@ -17,6 +17,21 @@ constexpr float kDistanciaSegura = 55.0f;
 constexpr float kRaioMinimo = 2.2f;
 constexpr float kRaioMaximo = 7.5f;
 
+/// Quanto a rocha mais rapida deriva. **Este numero e limitado pela colisao, e
+/// nao pelo gosto.**
+///
+/// A colisao e um teste de esferas na posicao do passo, sem varredura: se o
+/// deslocamento **relativo** entre nave e rocha em um passo passar da menor
+/// sobreposicao possivel, elas se atravessam sem nunca se tocar. A menor e 4,2
+/// (raio 2,0 da nave mais 2,2 da menor rocha), o que a 60 Hz da 252 u/s de
+/// velocidade relativa. O turbo no talo ja usa 240 desses (veja
+/// Flight::kTurboPorPonto), e sobram 12 -- este 6 e metade da folga, contra uma
+/// rocha vindo de frente no pior caso.
+///
+/// Passar disto exige trocar a colisao por uma varredura de segmento, e nao
+/// apenas subir o numero.
+constexpr float kDerivaMaxima = 6.0f;  // u/s
+
 // A densidade do campo. Estes numeros sao o **ritmo da viagem**: eles decidem
 // quanto tempo se passa no vazio e quanto no aperto.
 //
@@ -145,6 +160,33 @@ void AsteroidField::ativarPelaDensidade(Asteroide& rocha) {
     ativas_ += (rocha.ativa ? 1 : 0) - (antes ? 1 : 0);
 }
 
+Vec3 AsteroidField::sortearDeriva() {
+    // Direcao isotropica por sorteio com recusa dentro da esfera: sortear os
+    // tres eixos e usar direto daria mais rochas indo para os cantos do cubo
+    // que para o meio das faces.
+    Vec3 direcao{};
+    float tamanho2 = 0.0f;
+    for (int tentativa = 0; tentativa < 8; ++tentativa) {
+        direcao = Vec3{rng_.entre(-1.0f, 1.0f), rng_.entre(-1.0f, 1.0f), rng_.entre(-1.0f, 1.0f)};
+        tamanho2 = dot(direcao, direcao);
+        if (tamanho2 > 0.05f && tamanho2 <= 1.0f) {
+            break;
+        }
+    }
+    if (tamanho2 <= 0.05f || tamanho2 > 1.0f) {
+        return Vec3{};
+    }
+
+    // A magnitude e o sorteio **ao quadrado**, e nao ele mesmo, para o campo nao
+    // virar um enxame: com todas as pedras na mesma velocidade ele deixaria de
+    // se ler como campo. Medido, a curva reparte as rochas em cena em cerca de
+    // 30% praticamente paradas, 36% derivando devagar e 34% cruzando de fato --
+    // dois tercos que se leem como obstaculo e um terco que se le como
+    // movimento.
+    const float u = rng_.unitario();
+    return direcao * (kDerivaMaxima * u * u / std::sqrt(tamanho2));
+}
+
 void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
     raio_ = raio;
     semente_ = semente;
@@ -166,6 +208,7 @@ void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
         rocha.pitch = rng_.entre(0.0f, 6.2831853f);
         rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
         rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
+        rocha.velocidade = sortearDeriva();
         rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
         rocha.ativa = false;
         asteroides_.push_back(rocha);
@@ -182,6 +225,10 @@ void AsteroidField::atualizar(float dt) {
     for (Asteroide& rocha : asteroides_) {
         rocha.yaw += rocha.giroYaw * dt;
         rocha.pitch += rocha.giroPitch * dt;
+        // A deriva vale para todas, inclusive as inativas: elas voltam a ser
+        // vistas quando o wrap as levar a um bolsao, e uma pedra que tivesse
+        // ficado parada esse tempo todo reapareceria fora de lugar.
+        rocha.posicao += rocha.velocidade * dt;
     }
 }
 
@@ -219,6 +266,7 @@ void AsteroidField::centralizar(Vec3 posicao) {
             rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
             rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
             rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
+            rocha.velocidade = sortearDeriva();
             rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
             rocha.posicao = posicao + envolvido;
             // Atravessar a borda e o momento em que a rocha pergunta se ha campo
@@ -321,6 +369,7 @@ void AsteroidField::reposicionar(int indice, Vec3 referencia) {
     // justo quando ele esta olhando.
     rocha.posicao = sortear(referencia, raio_);
     rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
+    rocha.velocidade = sortearDeriva();
     rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
     ativarPelaDensidade(rocha);
 }

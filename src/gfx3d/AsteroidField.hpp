@@ -36,6 +36,11 @@ public:
         float pitch{0.0f};
         float giroYaw{0.0f};
         float giroPitch{0.0f};
+        /// Deriva propria: a rocha nao esta parada no vazio, ela vai para algum
+        /// lugar. E o que separa desviar de um obstaculo de prever onde ele
+        /// estara -- a pedra que cruza a rota se le de um jeito diferente da que
+        /// espera parada nela.
+        Vec3 velocidade{};
         std::size_t malha{0};
         /// Fora de um bolsao ou veio a rocha existe na memoria e em mais nada.
         bool ativa{true};
@@ -44,7 +49,7 @@ public:
     /// `raio` e a meia-aresta do cubo e tambem o alcance de desenho.
     void gerar(Uint32 semente, int quantidade, float raio);
 
-    /// Faz as rochas tombarem; passo fixo.
+    /// Faz as rochas tombarem e derivarem; passo fixo.
     void atualizar(float dt);
 
     /// Mantem o cubo centrado na nave; chamar sempre que ela se mover.
@@ -86,6 +91,8 @@ public:
 private:
     /// Ponto no cubo em torno de `centro`, a pelo menos `minimo` dele.
     Vec3 sortear(Vec3 centro, float minimo);
+    /// Uma deriva nova: direcao isotropica e magnitude com vies para o lento.
+    Vec3 sortearDeriva();
 
     /// Decide e aplica a atividade de uma rocha pela densidade onde ela esta.
     void ativarPelaDensidade(Asteroide& rocha);

@@ -3,7 +3,8 @@
 Você anda pelo interior de uma nave em 2D, usa o painel de pilotagem do convés e
 a tela vira um voo 3D: um caça low poly atravessando um campo de estrelas gerado
 proceduralmente, desviando de asteroides — que não vêm em chuva constante: o
-campo tem bolsões e veios, e a viagem alterna vazio e aperto. O mesmo painel também abre o
+campo tem bolsões e veios, a viagem alterna vazio e aperto, e as pedras derivam,
+então desviar é prever onde elas vão estar. O mesmo painel também abre o
 diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
 inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
 turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da

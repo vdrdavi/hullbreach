@@ -198,7 +198,7 @@ corrige o winding pela normal contra o centro da malha.
 com memória constante); o rastro sai de projetar a estrela deslocada de `+v·Δt`,
 porque a câmera é que andou.
 
-`AsteroidField` usa o mesmo cubo com wrap, com três diferenças que não são
+`AsteroidField` usa o mesmo cubo com wrap, com quatro diferenças que não são
 enfeite: a rocha que atravessa a borda é **sorteada de novo** nos eixos que não
 viraram (wrap puro deixa o campo periódico — voando reto, as mesmas pedras
 voltam na mesma formação a cada travessia) e as malhas são normalizadas para
@@ -212,6 +212,14 @@ isso `kQuantidadeRochas` é o **alocado** e não o que se vê: ele subiu para 46
 para a média em cena continuar na casa das 3300 que o resto do ajuste pressupõe.
 Se mexer nas escalas ou no piso da densidade, meça a média em cena junto — é ela,
 e não o total, que é a dificuldade.
+
+E cada rocha tem uma **deriva própria** (`kDerivaMaxima`), com a magnitude
+sorteada ao quadrado para o campo não virar enxame — dois terços das pedras se
+leem como obstáculo e um terço, como movimento. Esse teto é **a colisão que o
+fixa**, não o gosto: ela testa esferas na posição do passo, sem varredura, então
+a relativa nave-rocha não pode passar de 252 u/s (4,2 unidades por passo, a menor
+sobreposição possível). O turbo reserva 240 e a deriva usa 6 — mexer num dos dois
+é mexer no outro, e ir além exige varrer o segmento.
 
 A
 névoa do `Renderer3D` (`definirNevoa`) existe para a rocha emergir do vazio em

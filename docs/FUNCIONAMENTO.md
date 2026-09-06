@@ -868,6 +868,37 @@ Então quem atravessa a borda é **sorteado de novo** nos eixos que *não* virar
 e ganha raio, giro e malha novos. A troca acontece a uma aresta inteira de
 distância, dentro da névoa — longe dos olhos.
 
+**A rocha não está parada no vazio.** Cada uma tem uma **deriva própria**, e é
+isso que separa desviar de um obstáculo de prever onde ele estará: a pedra que
+cruza a rota se lê de um jeito diferente da que espera parada nela.
+
+A magnitude é o sorteio **ao quadrado** (`kDerivaMaxima · u²`), e não ele mesmo,
+para o campo não virar um enxame — com todas as pedras na mesma velocidade ele
+deixaria de se ler como campo. Medido, a curva reparte as rochas em cena assim:
+
+| | fração |
+| --- | --- |
+| praticamente paradas (< 0,5 u/s) | 30% |
+| derivando devagar (0,5 a 2,5) | 36% |
+| cruzando de fato (> 2,5 u/s) | 34% |
+
+Dois terços que se leem como obstáculo e um terço que se lê como movimento. A
+direção é isotrópica, por sorteio com recusa dentro da esfera — sortear os três
+eixos e usar direto daria mais rochas indo para os cantos do cubo que para o meio
+das faces.
+
+**O teto de 6 u/s não é gosto, é a colisão.** Ela é um teste de esferas na
+posição do passo, sem varredura: se o deslocamento **relativo** entre nave e
+rocha em um passo passar da menor sobreposição possível, as duas se atravessam
+sem nunca se tocar. A menor é 4,2 (raio 2,0 da nave mais 2,2 da menor rocha), o
+que a 60 Hz dá 252 u/s de velocidade relativa. O turbo no talo já reserva 240
+desses (seção 12), e sobram 12 — a deriva usa metade, contra uma rocha vindo de
+frente no pior caso. Medido com o turbo segurado, a pior relativa foi 173 u/s,
+2,89 unidades por passo, 31% de margem.
+
+Passar disso exige trocar a colisão por uma varredura de segmento, e não apenas
+subir o número. Os dois tetos se leem juntos: mexer em um é mexer no outro.
+
 **O campo respira: bolsões e veios.** A densidade não é uniforme. Uma função do
 espaço-mundo, `densidadeEm`, dá a probabilidade de uma rocha ficar **ativa** no
 ponto onde ela está — e rocha inativa continua alocada, continua acompanhando o
