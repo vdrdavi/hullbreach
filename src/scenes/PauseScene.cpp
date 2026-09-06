@@ -4,7 +4,6 @@
 #include "gfx/BitmapFont.hpp"
 #include "gfx/Draw.hpp"
 #include "input/Input.hpp"
-#include "scenes/Instrucoes.hpp"
 
 namespace jogo {
 
@@ -45,31 +44,12 @@ void PauseScene::desenhar(Context& ctx, float /*alpha*/) {
     draw::retanguloTela(ctx.renderer, tela, SDL_Color{8, 10, 16, 170});
 
     const float meio = static_cast<float>(App::kLarguraLogica) * 0.5f;
-    const float linha = ctx.fonte.alturaLinha(1.0f);
-
-    // Titulo, as duas saidas da pausa e a lista de controles, centrados como um
-    // conjunto: as medidas saem da fonte e da altura do proprio bloco, e nao de
-    // constantes, senao acrescentar uma linha a lista empurra o resto para fora
-    // da tela sem ninguem perceber (ja aconteceu no diagnostico).
-    const float alturaTitulo = ctx.fonte.alturaLinha(3.0f);
-    const float alturaBloco =
-        alturaTitulo + linha * 1.4f + linha * 2.0f + linha * 2.2f + instrucoes::altura(ctx);
-    float y = (static_cast<float>(App::kAlturaLogica) - alturaBloco) * 0.5f;
-
-    ctx.fonte.desenharCentralizado(ctx.renderer, "PAUSADO", meio, y,
+    ctx.fonte.desenharCentralizado(ctx.renderer, "PAUSADO", meio, 140.0f,
                                    SDL_Color{255, 255, 255, 255}, 3.0f);
-    y += alturaTitulo + linha * 1.4f;
-    ctx.fonte.desenharCentralizado(ctx.renderer, "Esc ou Start: continuar", meio, y,
+    ctx.fonte.desenharCentralizado(ctx.renderer, "Esc ou Start: continuar", meio, 200.0f,
                                    SDL_Color{186, 196, 210, 255}, 1.0f);
-    y += linha;
-    ctx.fonte.desenharCentralizado(ctx.renderer, "M: voltar ao menu", meio, y,
+    ctx.fonte.desenharCentralizado(ctx.renderer, "M: voltar ao menu", meio, 220.0f,
                                    SDL_Color{186, 196, 210, 255}, 1.0f);
-    y += linha * 2.2f;
-
-    // O outro lugar em que o jogo esta parado. Aqui a lista serve a quem ja
-    // esta voando e esqueceu um atalho, e por isso ela e a mesma do menu, e nao
-    // uma versao resumida: quem pausa para conferir precisa da lista inteira.
-    instrucoes::desenhar(ctx, meio, y);
 }
 
 }  // namespace jogo

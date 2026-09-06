@@ -1445,21 +1445,6 @@ Dois detalhes que parecem miudezas e não são. O rótulo da opção é montado 
 *blip* de confirmação toca **depois** de o volume mudar, e por isso já sai no
 volume novo: o som vira a própria prévia do ajuste.
 
-É também **um dos dois lugares onde os controles do jogo são explicados** — o
-outro é a pausa. Os dois desenham o mesmo bloco, de
-[`src/scenes/Instrucoes.cpp`](../src/scenes/Instrucoes.cpp); veja *Onde ficam as
-instruções*, adiante.
-
-Os itens e o bloco de instruções se centram **como um conjunto**, e a faixa do
-rodapé sai da conta antes disso. Centrar só os itens deixaria a lista pendurada
-para fora da tela; centrar o conjunto na tela inteira encostava a última linha
-da lista na dica de navegação, com dois pixels de folga. Com a faixa reservada,
-uma opção a mais no menu reacomoda os três sozinha.
-
-A dica de navegação do menu ficou, e não contradiz o que foi tirado das telas de
-jogo: ela é sobre **esta** tela, não sobre a partida. Sem ela ninguém descobre
-que a seta para o lado ajusta o volume.
-
 ### InteriorScene
 
 O convés. É a cena mais cheia do jogo, e vale ler o `atualizar()` de cima para
@@ -1525,10 +1510,8 @@ conflito, porque as duas zonas de interação não se cruzam: perto do painel o 
 pilota, perto da bancada ele solda. Ela segue o caminho do `Q` — *overlay* sem
 cortina, porque o piloto não sai do convés — e o convite dela sai da mesma
 `desenharConvite`, que existe justamente para as duas bocas do convés não
-parecerem coisas diferentes. Pelo mesmo motivo a lista de controles (`Instrucoes`,
-adiante) diz `E usar o movel a frente`, e não nomeia painel nem bancada: qual
-móvel a tecla abre é a tarja flutuante que diz, porque só ela sabe onde o jogador
-está.
+parecerem coisas diferentes: qual móvel o `E` abre é a tarja flutuante que diz,
+porque só ela sabe de qual dos dois o jogador está perto.
 
 A `desenharConvite` **grampeia a tarja dentro da tela, nos dois eixos**. Ela é
 ancorada no móvel, mas um móvel encostado numa parede fica a menos de meia tarja
@@ -1760,47 +1743,6 @@ Ela é a única cena que mexe no dispositivo de áudio: `Audio::suspender()` no
 ambiente do lado de fora tocando seria uma pausa pela metade — o mundo parado
 continuando a fazer barulho. Os detalhes de por que é o dispositivo que para, e
 não o ganho que cai, estão na seção 14.
-
-É também o segundo lugar onde os controles são explicados, com **a mesma lista do
-menu** e não uma versão resumida: quem pausa no meio da partida para conferir um
-atalho precisa da lista inteira, e é justamente quem já esqueceu alguma coisa.
-Como no menu, o título, as duas saídas da pausa e o bloco se centram como um
-conjunto, com as medidas saindo da fonte — acrescentar uma linha à lista
-reacomoda tudo em vez de empurrar o resto para fora da tela.
-
-### Onde ficam as instruções
-
-Arquivo: [`src/scenes/Instrucoes.cpp`](../src/scenes/Instrucoes.cpp). Não é uma
-cena — é um bloco que o menu e a pausa desenham.
-
-Os controles saíam antes em **tarjas no rodapé de cada tela da partida**: uma no
-convés, outra na cabine, outra em cada painel. Isso tinha dois defeitos que se
-somavam. Cada tarja só sabia da própria tela, então a lista inteira não existia
-em lugar nenhum — quem quisesse saber o que a bancada faz tinha de ir até ela. E
-elas ficavam na frente **enquanto se joga**, que é exatamente quando ninguém lê
-texto: no meio de um campo de asteroides o olho está na rocha, não no rodapé.
-
-Hoje a lista é uma só, nos dois lugares em que o jogo está parado e há tempo de
-ler. Ela vive num arquivo próprio, e não copiada nas duas cenas, pelo motivo de
-sempre: duas cópias de uma lista de controles divergem no primeiro atalho que
-mudar, e a que diverge é sempre a que o jogador está lendo.
-
-**A lista é organizada por lugar da nave, não por tecla** — `CONVES`, `PAINEL`,
-`CABINE`, `BANCADA` —, porque é assim que a dúvida aparece: ninguém pergunta "o
-que o E faz", pergunta "estou no convés, e agora". A última linha é a exceção e
-nomeia a tecla (`VOLTAR`), justamente porque ela é a que faz coisas diferentes em
-cada lugar.
-
-O recuo da coluna dos controles sai de `medir()` sobre o maior nome de lugar, e a
-largura do bloco, da linha mais larga — o **conjunto** é que se centra, e não
-cada linha, senão a coluna dos lugares serrilharia. Como todo o resto do texto do
-jogo, trocar o atlas da fonte reacomoda tudo sozinho (seção 9).
-
-O que **não** saiu das telas de jogo foram os avisos que são estado, e não
-controle: `[SUPERAQUECIDO]` na cabine, o convite flutuante sobre o móvel do
-convés, a dica de navegação do menu e a linha da tela de fim. Nenhum deles diz ao
-jogador que tecla existe — dizem o que está acontecendo, ou o que fazer *nesta*
-tela, e é por isso que continuam onde estão.
 
 ### GameOverScene
 

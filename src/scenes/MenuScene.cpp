@@ -7,7 +7,6 @@
 #include "gfx/BitmapFont.hpp"
 #include "gfx/Draw.hpp"
 #include "input/Input.hpp"
-#include "scenes/Instrucoes.hpp"
 #include "scenes/InteriorScene.hpp"
 
 namespace jogo {
@@ -124,21 +123,9 @@ void MenuScene::desenhar(Context& ctx, float /*alpha*/) {
     // conteudo da tela: a posicao dele vem da propria altura, senao ele fica
     // onde o titulo o empurrava e a tela nasce vazia em cima.
     const float espacoItem = ctx.fonte.alturaLinha(2.0f) + 10.0f;
-    const float alturaItens =
+    const float alturaBloco =
         espacoItem * static_cast<float>(itens - 1) + ctx.fonte.alturaLinha(2.0f);
-    // Itens e instrucoes se centram **como um conjunto**: o bloco de baixo nao
-    // e um rodape solto, e centrar so os itens deixaria a lista pendurada fora
-    // da tela. Uma opcao a mais no menu reacomoda os dois sozinha.
-    //
-    // A faixa do rodape sai da conta antes da centralizacao, senao o conjunto
-    // se centra na tela inteira e a ultima linha da lista encosta na dica de
-    // navegacao -- que e o que acontecia com dois pixels de folga.
-    const float linha = ctx.fonte.alturaLinha(1.0f);
-    const float respiro = linha * 1.5f;
-    const float rodape = linha * 2.2f;
-    const float alturaBloco = alturaItens + respiro + instrucoes::altura(ctx);
-    const float yPrimeiroItem =
-        (static_cast<float>(App::kAlturaLogica) - rodape - alturaBloco) * 0.5f;
+    const float yPrimeiroItem = (static_cast<float>(App::kAlturaLogica) - alturaBloco) * 0.5f;
 
     for (std::size_t i = 0; i < itens; ++i) {
         const bool ativo = static_cast<int>(i) == selecao_;
@@ -155,19 +142,11 @@ void MenuScene::desenhar(Context& ctx, float /*alpha*/) {
         }
     }
 
-    // Os controles do jogo, que ate aqui viviam em tarjas no rodape de cada
-    // tela da partida (veja Instrucoes.hpp). O menu e um dos dois lugares em que
-    // o jogo esta parado e ha tempo de ler.
-    instrucoes::desenhar(ctx, meio, yPrimeiroItem + alturaItens + respiro);
-
-    // A dica de navegacao fica, e nao contradiz o que foi tirado dali: ela e
-    // sobre **esta** tela, nao sobre a partida. Sem ela ninguem descobre que a
-    // seta para o lado ajusta o volume.
     const char* dica = ctx.input.temGamepad()
                            ? "direcional: navegar e ajustar   A: confirmar   B: sair"
                            : "setas ou WASD: navegar e ajustar   Enter: confirmar   Esc: sair";
     ctx.fonte.desenharCentralizado(ctx.renderer, dica, meio,
-                                   static_cast<float>(App::kAlturaLogica) - 20.0f, kCorRodape,
+                                   static_cast<float>(App::kAlturaLogica) - 34.0f, kCorRodape,
                                    1.0f);
 }
 
