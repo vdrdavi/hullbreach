@@ -253,6 +253,10 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
 
     // O sonar de rota, que e o unico aviso que atravessa o casco: no conves o
     // jogador nao ve o campo, e o que ele ouve e a proxima rocha se aproximando.
+    // Na cabine ele **se cala**, e por isso mesmo -- ali a rocha esta na tela, e
+    // o sonar e o substituto da vista, nao o acompanhamento dela. E o mesmo
+    // `abafado_` que decide as duas metades da troca: o casco que abafa o lado
+    // de fora e o que da ao console o que dizer, e onde se enxerga ele silencia.
     //
     // O que se mede e a pedra **no caminho reto a frente**, e nao a mais
     // proxima em qualquer direcao: a que passa de lado esta perto sem ser
@@ -270,8 +274,11 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     // O relogio **satura** no intervalo mais longo em vez de zerar com a rota
     // livre: assim a rocha que entra no alcance dispara o bipe no mesmo passo,
     // e nao ate 0,85 s depois -- justo o atraso que um aviso nao pode ter.
+    // O relogio anda mesmo com o sonar calado na cabine, pelo mesmo motivo pelo
+    // qual ele satura: quem volta ao conves com uma rocha ja no alcance ouve o
+    // bipe no primeiro passo, e nao ate 0,85 s depois de atravessar a porta.
     relogioSonar_ = std::min(relogioSonar_ + dt, kIntervaloSonarLonge);
-    if (proximidade_ > 0.0f) {
+    if (abafado_ && proximidade_ > 0.0f) {
         const float intervalo =
             kIntervaloSonarLonge *
             std::pow(kIntervaloSonarPerto / kIntervaloSonarLonge, proximidade_);

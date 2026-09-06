@@ -1235,6 +1235,15 @@ a informação que atravessa esse casco: um bipe cuja **cadência** diz a que
 distância está a pedra — devagar quando ela entra no alcance, quase contínuo
 quando está encostando.
 
+**Na cabine ele se cala**, e pelo mesmo motivo pelo qual soa no convés: ali a
+rocha está na tela. O sonar é o *substituto* da vista, não o acompanhamento dela
+— tocando nos dois lugares, ele deixaria de ser informação e viraria trilha
+sonora do desvio, competindo com aquilo que os olhos já resolvem melhor. O
+booleano que decide isso é o mesmo `abafado_` que já governava o ambiente: **um
+número só para as duas metades da troca**, porque são a mesma troca. O casco que
+abafa o lado de fora é exatamente o que dá ao console o que dizer, e onde se
+enxerga o console silencia.
+
 O que ele mede é `Flight::proximidade()`, entre 0 e 1, e mede a rocha **no caminho
 reto à frente**, não a mais próxima em qualquer direção. Isso não é um detalhe de
 implementação: o corredor varrido por `AsteroidField::distanciaNaRota` (seção
@@ -1247,11 +1256,12 @@ batida.
 regula a névoa da cabine, e não um número próprio do sonar. Duas consequências,
 e as duas são de propósito:
 
-- o console avisa sobre exatamente aquilo que a janela da cabine mostra. Nada
-  bipa fora da névoa, nada aparece na névoa sem bipar;
-- um ponto de energia no sensor compra aviso **nos dois lugares de uma vez**. Com
-  o sensor no mínimo o primeiro bipe soa a 12 unidades, um piscar antes da
-  batida; no máximo, a 95.
+- o convés **ouve exatamente até onde a cabine veria**. O jogador que atravessa a
+  nave não troca de sentido e sim de órgão: o alcance da informação continua o
+  mesmo, e nada bipa a uma distância em que a janela também não mostraria nada;
+- um ponto de energia no sensor compra alcance **nas duas formas de uma vez**,
+  sem que exista uma segunda tabela a manter em dia. Com o sensor no mínimo o
+  primeiro bipe soa a 12 unidades, um piscar antes da batida; no máximo, a 95.
 
 A cadência sai de uma interpolação em **razão**, e não em diferença:
 
@@ -1267,10 +1277,13 @@ vez no fim; em razão, a aceleração é uniforme do primeiro bipe ao último.
 Dois ajustes finos que o código explica e que valem repetir aqui, porque os dois
 já foram o erro antes de serem o acerto:
 
-**O relógio satura em vez de zerar.** Com a rota livre, `relogioSonar_` continua
-subindo até o intervalo mais longo e para ali. Zerá-lo atrasaria o primeiro bipe
-em até 0,85 s depois de a rocha entrar no alcance — justamente o atraso que um
-aviso não pode ter. Saturado, ele dispara no mesmo passo da entrada.
+**O relógio satura em vez de zerar, e anda mesmo com o sonar calado.** Com a rota
+livre, `relogioSonar_` continua subindo até o intervalo mais longo e para ali;
+na cabine, onde nada soa, ele sobe igual. Zerá-lo atrasaria o primeiro bipe em
+até 0,85 s depois de a rocha entrar no alcance — ou depois de o jogador
+atravessar a porta de volta para o convés —, justamente o atraso que um aviso não
+pode ter. Saturado, ele dispara no mesmo passo: medido, o primeiro bipe depois de
+uma volta ao convés com rocha já na rota sai em 0,02 s, um passo fixo.
 
 **A largura do corredor é o ajuste que decide tudo.** São três unidades de folga
 além do contato (o tubo tem raio de 7,2 a 12,5, contra os 4,2 a 9,5 da colisão de
@@ -1289,6 +1302,10 @@ soam juntos quando a viagem vai mal e precisam continuar sendo **dois** avisos.
 O ganho também acompanha a proximidade (0,5 a 1,0), o que dá uma segunda
 dimensão de graça; e uma nave já perdida se cala junto com o resto, pelo mesmo
 `destruida()` do ambiente e da sirene.
+
+`proximidade()` continua sendo **medida** na cabine, onde o sonar não soa: ela é
+estado da nave, e não do som. Quem quiser mostrá-la de outra forma já a tem
+pronta, e é assim que a tela de depuração a lê.
 
 ---
 

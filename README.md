@@ -243,7 +243,11 @@ alcance e a cada 0,10 s quando ela está encostando. Por isso ele não é uma vo
 *loop* como os outros dois — um loop teria a cadência gravada no arquivo, e aí
 seria uma só. Ele mede a pedra **no caminho reto à frente**, não a mais próxima
 em qualquer direção, e enxerga só até onde o sensor da nave alcança: repartir
-energia para o sensor compra aviso na cabine e no convés de uma vez.
+energia para o sensor abre a névoa da cabine e adianta o bipe do convés na mesma
+medida.
+
+E ele **só toca no convés**. Na cabine a rocha está na tela: o sonar é o
+substituto da vista, não o acompanhamento dela.
 
 O WAV do ambiente é gerado em `tools/gen_assets.py` por um integrador com
 vazamento rodado **em círculo**: uma passada só para aquecer o estado e outra

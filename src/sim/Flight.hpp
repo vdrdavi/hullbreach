@@ -266,6 +266,10 @@ public:
     /// livre, 1 encostando no casco. E o que o sonar do console mede, e o que
     /// ele mede e limitado pelo sensor -- entao a reparticao de energia decide
     /// a que distancia o aviso comeca a soar (veja atualizar()).
+    ///
+    /// O numero e medido sempre, inclusive na cabine, onde o sonar nao soa: e
+    /// estado da nave, e nao do som. Quem quiser mostra-lo em outro lugar ja o
+    /// tem pronto -- e a tela de depuracao o le assim.
     float proximidade() const { return proximidade_; }
 
     const AsteroidField& rochas() const { return rochas_; }

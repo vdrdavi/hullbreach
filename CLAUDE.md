@@ -215,9 +215,13 @@ campo, e o que ele ouve é um bipe cuja **cadência** aperta conforme a rocha ch
 (`Flight::proximidade`). Ele mede a pedra no caminho reto à frente
 (`AsteroidField::distanciaNaRota`), e não a mais próxima em qualquer direção — o
 corredor varrido é a previsão do piloto automático, que é quem pilota enquanto se
-anda lá dentro. O alcance é o do sensor **como ele está agora**, a mesma rampa da
-névoa: o console avisa exatamente sobre o que a janela da cabine mostra, e um
-ponto de energia no sensor compra aviso nos dois lugares. Ao contrário do ambiente
+anda lá dentro. **Na cabine ele se cala**: ali a rocha está na tela, e o sonar é o
+substituto da vista, não o acompanhamento dela — quem decide é o mesmo `abafado_`
+do ambiente, um booleano só para as duas metades da mesma troca. O alcance é o do
+sensor **como ele está agora**, a mesma rampa da névoa, então o convés ouve até
+onde a cabine veria e um ponto de energia no sensor compra alcance nas duas
+formas sem uma segunda tabela a manter em dia. O relógio do bipe anda mesmo
+calado, para quem volta ao convés ouvir no primeiro passo. Ao contrário do ambiente
 e da sirene não é voz em loop — cada bipe é um `tocar`, porque o que informa é o
 intervalo entre eles. A largura do corredor é o ajuste sensível: alargá-la faz o
 sonar medir a densidade do campo em vez do risco e virar chiado.
