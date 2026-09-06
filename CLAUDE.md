@@ -23,6 +23,18 @@ texto e no glossário.
 O registro do que mudou e quando é o histórico do git; o **porquê** de cada
 mudança vai no corpo da mensagem de commit.
 
+## O manual do piloto
+
+**[docs/COMO_JOGAR.md](docs/COMO_JOGAR.md) é o tutorial do jogador**: o que cada
+tela mostra, quanto custa cada recurso, o que a nave avisa e que decisões há
+para tomar. É sobre jogar, não sobre o código — o que está lá é o que o jogador
+vê e sente, com os números que ele consegue conferir na tela.
+
+**Mecânica nova entra lá no mesmo commit da implementação**, e mecânica alterada
+é reescrita na seção que já a descrevia — inclusive na tabela de controles e no
+resumo de números do fim. Como o FUNCIONAMENTO.md, ele descreve o jogo como ele
+é hoje: nada de "antes era assim".
+
 ## Comandos
 
 ```sh
@@ -315,5 +327,6 @@ os nomes de todas elas e as regras de cada um dos três está em
 [docs/ARQUITETURA.md § Como se chamam as telas](docs/ARQUITETURA.md#como-se-chamam-as-telas):
 tela nova ganha uma linha ali **antes** do `.cpp`.
 
-Mais detalhes em [README.md](README.md), [docs/ARQUITETURA.md](docs/ARQUITETURA.md)
-e [docs/FUNCIONAMENTO.md](docs/FUNCIONAMENTO.md).
+Mais detalhes em [README.md](README.md), [docs/ARQUITETURA.md](docs/ARQUITETURA.md),
+[docs/FUNCIONAMENTO.md](docs/FUNCIONAMENTO.md) e
+[docs/COMO_JOGAR.md](docs/COMO_JOGAR.md).

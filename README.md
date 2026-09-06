@@ -28,6 +28,10 @@ se despedaça na vista externa e a viagem termina ali.
 
 ![Voo 3D: o caça low poly triangular entre asteroides, com as estrelas riscando a tela ao redor](docs/voo.png)
 
+O manual do piloto — o que cada tela mostra, o que o turbo, a energia e a
+bancada custam e como se lê o sonar — está em
+[docs/COMO_JOGAR.md](docs/COMO_JOGAR.md).
+
 ## Dependências e build
 
 SDL 3.4 ou mais recente, CMake 3.28+, Ninja e um compilador C++20 (GCC, Clang ou
@@ -277,6 +281,9 @@ Tudo é desenhado em coordenadas lógicas de **640×360**
 real da janela e converte as coordenadas do mouse.
 
 ## Arquitetura
+
+Como se joga, mecânica por mecânica, do ponto de vista de quem pilota:
+[docs/COMO_JOGAR.md](docs/COMO_JOGAR.md).
 
 Mapa do código, como adicionar uma cena e como adicionar assets:
 [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
