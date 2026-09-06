@@ -17,6 +17,71 @@ constexpr float kDistanciaSegura = 55.0f;
 constexpr float kRaioMinimo = 2.2f;
 constexpr float kRaioMaximo = 7.5f;
 
+// A densidade do campo. Estes numeros sao o **ritmo da viagem**: eles decidem
+// quanto tempo se passa no vazio e quanto no aperto.
+//
+// As escalas sao dadas em unidades de mundo, e sao grandes de proposito. A
+// atividade de cada rocha e decidida quando ela entra no cubo, a `kRaioCampo`
+// da nave, e nao e revista depois -- reavaliar a cada quadro faria a pedra na
+// fronteira piscar, e custaria uma avaliacao de ruido por rocha por passo. Com
+// feicoes de centenas de unidades, a decisao tomada na borda continua valendo
+// quando a nave chega la, que e o que faz a estrutura parecer coerente no
+// espaco em vez de sorteada.
+constexpr float kEscalaBolsao = 640.0f;
+constexpr float kEscalaVeio = 260.0f;
+/// Quanto o veio se alonga. O estico e no eixo X do mundo, e nao em Z, porque a
+/// viagem comeca apontada para -Z: um veio esticado ao longo da rota seria um
+/// corredor em que se entra e se fica: atravessado, ele vira uma faixa que se
+/// cruza, com comeco e fim.
+constexpr float kEsticoVeio = 4.5f;
+/// O piso da densidade e o que impede o vazio de virar vazio de verdade. Uma
+/// regiao sem pedra nenhuma nao e alivio, e tedio -- e pior, tiraria do sonar e
+/// do sensor qualquer coisa a fazer por dezenas de segundos.
+constexpr float kDensidadeMinima = 0.2f;
+
+/// Hash inteiro determinista. E o xorshift do Aleatorio, mas alimentado pela
+/// **coordenada** em vez de por um estado que anda: o ruido tem de dar sempre o
+/// mesmo valor no mesmo ponto do espaco, viagem afora.
+float hashRuido(int x, int y, int z, Uint32 semente) {
+    Uint32 h = semente;
+    h ^= static_cast<Uint32>(x) * 0x8DA6B343u;
+    h ^= static_cast<Uint32>(y) * 0xD8163841u;
+    h ^= static_cast<Uint32>(z) * 0xCB1AB31Fu;
+    h ^= h << 13;
+    h ^= h >> 17;
+    h ^= h << 5;
+    return static_cast<float>(h >> 8) / 16777216.0f;
+}
+
+/// Ruido de valor com interpolacao suave: sorteia um numero em cada canto da
+/// grade inteira e mistura os oito. O amaciamento (3t^2 - 2t^3) e o que tira a
+/// quina da interpolacao linear -- sem ele as feicoes teriam bordas retas e o
+/// campo pareceria quadriculado.
+float ruidoDeValor(Vec3 p, Uint32 semente) {
+    const float bx = std::floor(p.x);
+    const float by = std::floor(p.y);
+    const float bz = std::floor(p.z);
+    const int ix = static_cast<int>(bx);
+    const int iy = static_cast<int>(by);
+    const int iz = static_cast<int>(bz);
+
+    const auto amaciar = [](float t) { return t * t * (3.0f - 2.0f * t); };
+    const float tx = amaciar(p.x - bx);
+    const float ty = amaciar(p.y - by);
+    const float tz = amaciar(p.z - bz);
+
+    const auto mistura = [](float a, float b, float t) { return a + (b - a) * t; };
+    float face[2];
+    for (int dz = 0; dz < 2; ++dz) {
+        const float baixo = mistura(hashRuido(ix, iy, iz + dz, semente),
+                                    hashRuido(ix + 1, iy, iz + dz, semente), tx);
+        const float alto = mistura(hashRuido(ix, iy + 1, iz + dz, semente),
+                                   hashRuido(ix + 1, iy + 1, iz + dz, semente), tx);
+        face[dz] = mistura(baixo, alto, ty);
+    }
+    return mistura(face[0], face[1], tz);
+}
+
 /// Mantem uma coordenada relativa dentro de [-raio, raio).
 float envolver(float distancia, float raio) {
     const float largura = raio * 2.0f;
@@ -45,8 +110,44 @@ Vec3 AsteroidField::sortear(Vec3 centro, float minimo) {
     return centro + Vec3{0.0f, 0.0f, -raio_};
 }
 
+float AsteroidField::densidadeEm(Vec3 p) const {
+    // Duas camadas, e cada uma faz uma coisa que a outra nao faz.
+    //
+    // O **bolsao** e ruido cru numa escala grande: regioes redondas, umas
+    // cheias e outras vazias, com transicao lenta. Sozinho ele daria um campo
+    // que so engrossa e afina, sem forma.
+    const float bolsao = ruidoDeValor(p * (1.0f / kEscalaBolsao), semente_ ^ 0x51u);
+
+    // O **veio** e o mesmo ruido dobrado no meio (1 - |2n-1|): o valor sobe ate
+    // 1 onde o ruido passa por 0,5 e cai para 0 nos dois extremos, o que
+    // transforma superficies em cristas. Esticado em X, essas cristas viram
+    // faixas alongadas -- correntes de pedra que se atravessa de lado.
+    const Vec3 q{p.x / (kEscalaVeio * kEsticoVeio), p.y / kEscalaVeio, p.z / kEscalaVeio};
+    const float veio = 1.0f - std::fabs(ruidoDeValor(q, semente_ ^ 0xA7u) * 2.0f - 1.0f);
+
+    // Meio a meio: o bolsao da o fundo lento e o veio, a estrutura por cima. Um
+    // so dos dois daria ou um campo amorfo ou um campo listrado.
+    const float campo = 0.5f * bolsao + 0.5f * veio;
+
+    // A curva em S puxa o resultado para os extremos. Sem ela a soma de dois
+    // ruidos se aperta em torno da media -- o campo passava quase todo o tempo
+    // "mais ou menos cheio", que e o mesmo defeito que a densidade uniforme
+    // tinha, so que com um numero diferente. Com ela ha vazio de verdade e
+    // aperto de verdade, e menos tempo no meio termo. A media quase nao muda,
+    // que e o que mantem valido o resto do ajuste da dificuldade.
+    const float contraste = campo * campo * (3.0f - 2.0f * campo);
+    return kDensidadeMinima + (1.0f - kDensidadeMinima) * contraste;
+}
+
+void AsteroidField::ativarPelaDensidade(Asteroide& rocha) {
+    const bool antes = rocha.ativa;
+    rocha.ativa = rng_.unitario() < densidadeEm(rocha.posicao);
+    ativas_ += (rocha.ativa ? 1 : 0) - (antes ? 1 : 0);
+}
+
 void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
     raio_ = raio;
+    semente_ = semente;
     rng_ = Aleatorio(semente);
 
     malhas_.clear();
@@ -66,7 +167,14 @@ void AsteroidField::gerar(Uint32 semente, int quantidade, float raio) {
         rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
         rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
         rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
+        rocha.ativa = false;
         asteroides_.push_back(rocha);
+    }
+    // A atividade so depois de todas nascerem, para `ativas_` contar do zero e
+    // nao herdar o que sobrou de uma viagem anterior.
+    ativas_ = 0;
+    for (Asteroide& rocha : asteroides_) {
+        ativarPelaDensidade(rocha);
     }
 }
 
@@ -112,6 +220,13 @@ void AsteroidField::centralizar(Vec3 posicao) {
             rocha.giroYaw = rng_.entre(-0.5f, 0.5f);
             rocha.giroPitch = rng_.entre(-0.5f, 0.5f);
             rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
+            rocha.posicao = posicao + envolvido;
+            // Atravessar a borda e o momento em que a rocha pergunta se ha campo
+            // onde ela reapareceu. E o unico momento: dai em diante ela carrega a
+            // resposta ate a proxima travessia, e e isso que faz o bolsao ter
+            // borda em vez de cintilar rocha a rocha.
+            ativarPelaDensidade(rocha);
+            continue;
         }
 
         rocha.posicao = posicao + envolvido;
@@ -123,6 +238,9 @@ void AsteroidField::submeter(Renderer3D& cena) const {
     const Vec3 frente = -cena.camera().orientacao.colunas[2];
     const float fim = cena.nevoaFim();
     for (const Asteroide& rocha : asteroides_) {
+        if (!rocha.ativa) {
+            continue;
+        }
         // O corte e por **profundidade de camera**, a mesma grandeza da nevoa, e
         // isso importa mais do que parece. Aqui ja se descartou por distancia
         // radial, o que so vale enquanto o corte for mais largo que a nevoa: uma
@@ -149,6 +267,9 @@ void AsteroidField::submeter(Renderer3D& cena) const {
 int AsteroidField::colisao(Vec3 posicao, float raio) const {
     for (std::size_t i = 0; i < asteroides_.size(); ++i) {
         const Asteroide& rocha = asteroides_[i];
+        if (!rocha.ativa) {
+            continue;
+        }
         const float alcance = rocha.raio + raio;
         const Vec3 delta = rocha.posicao - posicao;
         if (dot(delta, delta) < alcance * alcance) {
@@ -162,6 +283,9 @@ float AsteroidField::distanciaNaRota(Vec3 posicao, Vec3 frente, float corredor,
                                      float alcance) const {
     float maisProxima = alcance;
     for (const Asteroide& rocha : asteroides_) {
+        if (!rocha.ativa) {
+            continue;
+        }
         const Vec3 delta = rocha.posicao - posicao;
         const float profundidade = dot(delta, frente);
         // Ate a **superficie**, e nao ate o centro: o que interessa e quando a
@@ -198,6 +322,7 @@ void AsteroidField::reposicionar(int indice, Vec3 referencia) {
     rocha.posicao = sortear(referencia, raio_);
     rocha.raio = rng_.entre(kRaioMinimo, kRaioMaximo);
     rocha.malha = static_cast<std::size_t>(rng_.proximo() % kVariedades);
+    ativarPelaDensidade(rocha);
 }
 
 }  // namespace jogo

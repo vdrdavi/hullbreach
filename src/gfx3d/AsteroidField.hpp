@@ -14,6 +14,17 @@ namespace jogo {
 /// cubo que envolve a nave por wrap, o que da um campo infinito com memoria
 /// constante. Para a colisao cada rocha e apenas uma esfera -- as malhas sao
 /// normalizadas com raio 1, entao a escala com que sao desenhadas ja e o raio.
+///
+/// **A densidade nao e uniforme.** Um ruido sobre a posicao-mundo desenha
+/// bolsoes e veios, e cada rocha e ativada ou nao conforme a densidade do ponto
+/// em que ela entra no cubo. Voando reto atravessa-se vazio, aperto e vazio de
+/// novo, em vez da mesma chuva constante de pedra do primeiro ao ultimo minuto
+/// -- que era a coisa mais parada de uma viagem que nao para.
+///
+/// A rocha inativa continua alocada e continua acompanhando o wrap: ela nao e
+/// desenhada, nao colide e nao aparece no sonar, e volta a existir quando o
+/// wrap a levar para uma regiao cheia. E o mesmo compromisso do resto da
+/// classe -- memoria constante, sem alocar nem liberar nada em voo.
 class AsteroidField {
 public:
     struct Asteroide {
@@ -26,6 +37,8 @@ public:
         float giroYaw{0.0f};
         float giroPitch{0.0f};
         std::size_t malha{0};
+        /// Fora de um bolsao ou veio a rocha existe na memoria e em mais nada.
+        bool ativa{true};
     };
 
     /// `raio` e a meia-aresta do cubo e tambem o alcance de desenho.
@@ -61,15 +74,29 @@ public:
         return asteroides_[static_cast<std::size_t>(indice)];
     }
     int quantidade() const { return static_cast<int>(asteroides_.size()); }
+    /// Quantas estao de fato em cena. E a leitura que diz se a nave esta num
+    /// bolsao ou num vazio, e a unica maneira de ver isso em numero.
+    int ativas() const { return ativas_; }
     float raio() const { return raio_; }
+
+    /// A densidade do campo em torno de um ponto, de kDensidadeMinima a 1. E a
+    /// probabilidade de uma rocha que entre ali ficar ativa.
+    float densidadeEm(Vec3 p) const;
 
 private:
     /// Ponto no cubo em torno de `centro`, a pelo menos `minimo` dele.
     Vec3 sortear(Vec3 centro, float minimo);
 
+    /// Decide e aplica a atividade de uma rocha pela densidade onde ela esta.
+    void ativarPelaDensidade(Asteroide& rocha);
+
     std::vector<Mesh> malhas_;
     std::vector<Asteroide> asteroides_;
     Aleatorio rng_{0x9E3779B9u};
+    /// A semente da viagem, guardada: o ruido da densidade e funcao da posicao,
+    /// e nao de uma sequencia, entao ele precisa dela toda vez que e avaliado.
+    Uint32 semente_{0x9E3779B9u};
+    int ativas_{0};
     float raio_{160.0f};
 };
 

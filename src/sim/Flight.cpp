@@ -30,9 +30,15 @@ constexpr float kLimitePitch = 1.15f; // rad
 // decide quantas rochas se cruza por minuto, entao 200 em um cubo de raio 110
 // viram 3300 em um de raio 280 (1,88e-5 rocha por unidade cubica nos dois).
 // Aumentar o campo sem isso seria baixar a dificuldade pela porta dos fundos.
-// Medido em release: 4,9 ms por quadro, contra os 16,7 de 60 Hz.
+//
+// Este numero e o **alocado**, e nao o que se ve. Desde que o campo ganhou
+// bolsoes e veios (AsteroidField::densidadeEm), parte das rochas fica inativa a
+// cada instante, e o total foi subido para que a media em cena continuasse na
+// casa das 3300 que o resto do ajuste pressupoe -- a densidade media do ruido e
+// de cerca de 0,7. O que muda nao e quantas pedras ha por minuto na media, e sim
+// que agora elas vem em ondas.
 constexpr float kRaioCampo = 280.0f;
-constexpr int kQuantidadeRochas = 3300;
+constexpr int kQuantidadeRochas = 4600;
 constexpr float kRaioNave = 2.0f;
 
 // Batida: a nave quase para e o baque decai por si.

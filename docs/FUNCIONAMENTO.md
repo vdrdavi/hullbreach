@@ -868,6 +868,56 @@ Então quem atravessa a borda é **sorteado de novo** nos eixos que *não* virar
 e ganha raio, giro e malha novos. A troca acontece a uma aresta inteira de
 distância, dentro da névoa — longe dos olhos.
 
+**O campo respira: bolsões e veios.** A densidade não é uniforme. Uma função do
+espaço-mundo, `densidadeEm`, dá a probabilidade de uma rocha ficar **ativa** no
+ponto onde ela está — e rocha inativa continua alocada, continua acompanhando o
+wrap, mas não é desenhada, não colide e não aparece no sonar. Voando reto
+atravessa-se vazio, aperto e vazio de novo, em vez da mesma chuva constante de
+pedra do primeiro ao último minuto, que era a coisa mais parada de uma viagem que
+não para.
+
+A função soma **duas camadas, e cada uma faz o que a outra não faz**:
+
+- o **bolsão** é ruído de valor cru numa escala grande (640 unidades): regiões
+  arredondadas, umas cheias e outras vazias, com transição lenta. Sozinho ele
+  daria um campo que só engrossa e afina, sem forma;
+- o **veio** é o mesmo ruído dobrado no meio — `1 - |2n-1|` sobe até 1 onde o
+  ruído passa por 0,5 e cai a 0 nos dois extremos, o que transforma superfícies
+  em cristas. Esticado 4,5× no eixo X, essas cristas viram faixas alongadas:
+  correntes de pedra que se atravessa de lado. O estico é em X, e não em Z,
+  porque a viagem começa apontada para -Z — um veio ao longo da rota seria um
+  corredor em que se entra e se fica; atravessado, ele tem começo e fim.
+
+Sobre a soma vai uma **curva em S** (`c²(3-2c)`). Sem ela a média de dois ruídos
+se aperta em torno do meio, e o campo passava quase todo o tempo "mais ou menos
+cheio" — o mesmo defeito da densidade uniforme, só que com outro número. Com ela
+há vazio de verdade e aperto de verdade.
+
+**A atividade é decidida quando a rocha entra no cubo, e não é revista.** Isso é
+o que faz o bolsão ter borda em vez de cintilar rocha a rocha, e o que evita uma
+avaliação de ruído por rocha por passo. Funciona porque as feições são grandes:
+a rocha entra a 280 unidades da nave, e a decisão tomada ali continua valendo
+quando a nave chega àquela região — a estrutura é coerente no espaço-mundo, e é a
+nave que a atravessa.
+
+`kQuantidadeRochas` subiu de 3300 para **4600 por causa disso**: o número alocado
+deixou de ser o número em cena. Com a densidade média do ruído em torno de 0,7,
+a média em cena continua na casa das 3300 que o resto do ajuste pressupõe. O que
+mudou não é quantas pedras há por minuto na média — é que agora elas vêm em
+ondas. Medido com um piloto automático voando reto, contando as rochas ativas
+dentro de 150 unidades:
+
+| | rochas à vista |
+| --- | --- |
+| trecho mais vazio | 144 |
+| média | 274 |
+| trecho mais cheio | 390 |
+
+**2,7 vezes** entre o vazio e o aperto, com a média intacta. E custa o mesmo: 3,2
+a 3,4 ms de trabalho por quadro em release, contra 3,37 a 3,39 do campo uniforme
+de 3300 — as 1300 rochas a mais só pagam o wrap e um teste, porque o trabalho
+pesado é rasterizar as visíveis, e essas continuam sendo as mesmas na média.
+
 **Até onde a névoa pode alcançar, e por quê.** Este é o limite que decide o teto
 do sensor (seção 12), e ele tem duas causas independentes. Instrumentar o
 `submeter` — registrar, no primeiro quadro em que cada rocha passa a ser

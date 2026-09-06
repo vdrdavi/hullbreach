@@ -209,8 +209,14 @@ void desenharNave(Coluna& coluna, Flight* voo) {
     coluna.campo("rumo", texto("y%.0f p%.0f r%.0f", static_cast<double>(pose.yaw * kRadParaGrau),
                                static_cast<double>(pose.pitch * kRadParaGrau),
                                static_cast<double>(pose.roll * kRadParaGrau)));
-    coluna.campo("rochas", texto("%d em raio %.0f", voo->rochas().quantidade(),
-                                 static_cast<double>(voo->rochas().raio())));
+    // Ativas sobre alocadas, e a densidade no ponto onde a nave esta: e o unico
+    // jeito de ver em numero se ela esta num bolsao ou num vazio, porque a
+    // diferenca so aparece de outra forma como "hoje o campo parece cheio".
+    const AsteroidField& campo = voo->rochas();
+    coluna.campo("rochas", texto("%d de %d em raio %.0f", campo.ativas(), campo.quantidade(),
+                                 static_cast<double>(campo.raio())));
+    coluna.campo("densidade", texto("%.2f", static_cast<double>(
+                                               campo.densidadeEm(voo->pose().posicao))));
 }
 
 }  // namespace
