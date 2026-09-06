@@ -9,7 +9,10 @@ turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e 
 blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de
 outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco segundos e leva
 quarenta e cinco para se refazer, e esgotá-lo superaquece o motor — que só volta
-a abrir depois de esfriar o bastante para render um segundo inteiro. Correr
+a abrir depois de esfriar o bastante para render um segundo inteiro. E ele **vai
+perdendo força junto com a carga**, então a nave murcha debaixo da sua mão em vez
+de fechar o motor de uma vez: é assim que o turbo conta quanto ainda tem sem você
+precisar atravessar a nave para ler o medidor. Correr
 deixou de ser de graça e virou uma decisão sobre quando correr. No canto oposto do convés há uma
 bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
 lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a

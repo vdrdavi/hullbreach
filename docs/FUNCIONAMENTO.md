@@ -1243,6 +1243,46 @@ Três números, e eles são a troca inteira:
 | `kSegundosParaEncher` | 45 s | do vazio ao cheio — **nove segundos de espera por segundo de motor aberto** |
 | `kReligarTurbo` | 0,2 tanque | zerar o tanque **superaquece** o motor, e ele só reabre com uma divisão inteira de volta |
 
+#### O turbo perde força junto com a carga
+
+O tanque não entrega os mesmos 185 u/s do primeiro ao último segundo. O ganho
+sobre o cruzeiro é multiplicado por uma **força** que cai com a reserva, entre
+`kForcaMinimaTurbo` (0,35, tanque no fim) e 1 (tanque cheio). Como o alvo se move
+a cada passo enquanto o tanque esvazia, a nave **murcha durante o próprio turbo**
+em vez de fechar o motor de uma vez. Medido com a tecla segurada do início ao fim
+de um tanque cheio, com a energia neutra:
+
+| t | tanque | força | velocidade | FOV |
+| --- | --- | --- | --- | --- |
+| 1,0 s | 4,00 s | 0,87 | 167,8 u/s | 77,5° |
+| 2,0 s | 3,00 s | 0,74 | 157,9 u/s | 76,0° |
+| 3,0 s | 2,00 s | 0,61 | 142,2 u/s | 73,7° |
+| 4,0 s | 1,00 s | 0,48 | 126,2 u/s | 71,4° |
+| 4,9 s | 0,10 s | 0,36 | 111,8 u/s | 69,3° |
+
+Isso resolve de graça o problema de o medidor morar em outra tela: **o turbo
+passa a informar a própria carga**. O piloto sente o tanque acabando antes de
+acabar, e deixa de ser surpreendido pelo motor fechando sem aviso — o que era o
+preço de a `StatusScene` ficar a uma travessia de distância.
+
+O piso de 0,35 existe para o resto do tanque não virar lixo. Sem ele a força
+tenderia a zero junto com a reserva, os últimos goles não valeriam o aperto do
+botão e o tanque teria, na prática, encolhido.
+
+Uma consequência que vale registrar: **`kTurboPorPonto` deixou de ser
+atingível**. A velocidade persegue o alvo em rampa (taxa 3/s) e, no tempo que
+leva para chegar perto, a carga já caiu — o pico medido é 167,8 e não os 185 da
+tabela. Isso não afrouxa nada: aquele teto existe como limite de segurança da
+colisão, e a nave passou a só se afastar dele.
+
+E o **campo de visão da cabine passou a seguir a aceleração real**, e não o
+estado da tecla: `fov_` persegue `kFovBase + (kFovTurbo - kFovBase) *
+fatorTurbo()`. Com o alvo binário anterior a tela mentia, alargando o mesmo tanto
+para o primeiro segundo de tanque cheio e para o último, quando a nave mal
+empurra. Pelo mesmo motivo o ganho do ambiente e o brilho do escapamento já
+acompanhavam sozinhos — os três leem `fatorTurbo()`, que é a velocidade medida
+contra o teto, e nenhum deles precisou saber que a força existe.
+
 #### O superaquecimento
 
 Zerar o tanque não deixa o turbo "quase disponível": tranca o motor até a recarga
@@ -1514,7 +1554,8 @@ Nascer já nessa distância é começar no regime, não caminhar até ele.
 
 O FOV também nasce 12° mais fechado e abre sozinho, pela mesma suavização que já
 existia para o turbo: a vista **abre do painel para o espaço** em vez de aparecer
-pronta.
+pronta. O alvo dessa suavização é hoje proporcional a `fatorTurbo()`, e não ao
+estado da tecla (seção 12).
 
 #### A sequência de destruição
 

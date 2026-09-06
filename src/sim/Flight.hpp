@@ -192,6 +192,21 @@ public:
     /// O limiar e uma divisao porque e a unidade que o medidor ja desenha: a
     /// regra fica visivel na barra, sem precisar de texto explicando.
     static constexpr float kReligarTurbo = 1.0f / kSegundosDeTurbo;
+    /// **O turbo perde forca junto com a carga.** O tanque nao entrega os mesmos
+    /// 185 u/s do primeiro ao ultimo segundo: o ganho sobre o cruzeiro e
+    /// multiplicado por uma forca que cai com a reserva, entre este piso (tanque
+    /// no fim) e 1 (tanque cheio).
+    ///
+    /// Isso resolve, de graca, o problema de o medidor morar em outra tela: com
+    /// a nave murchando debaixo da mao, **o turbo passa a informar a propria
+    /// carga**. O piloto sente o tanque acabar antes de acabar, e nao e mais
+    /// surpreendido pelo motor fechando de uma vez.
+    ///
+    /// O piso existe para o resto do tanque nao virar lixo. Sem ele a forca
+    /// tenderia a zero junto com a reserva, e os ultimos goles nao valeriam o
+    /// aperto do botao -- o tanque teria, na pratica, encolhido. Com 0,35 o
+    /// ultimo segundo ainda empurra, so que bem menos que o primeiro.
+    static constexpr float kForcaMinimaTurbo = 0.35f;
 
     /// Ate onde a bancada do conves leva o casco de volta. O reparo de campo
     /// nao deixa a nave nova: acima disto o estrago e de estaleiro, e a viagem
@@ -274,6 +289,13 @@ public:
     /// O turbo esta **aberto agora**. Nao e a tecla: sem reserva ele nao abre,
     /// e a tecla segurada com o tanque vazio nao faz a nave andar mais.
     bool turbo() const { return turbo_; }
+
+    /// Quanto o turbo empurra agora, de kForcaMinimaTurbo a 1: a fracao do ganho
+    /// sobre o cruzeiro que a carga atual ainda paga. Vale mesmo com o motor
+    /// fechado -- e o que o proximo aperto vai render, nao o que esta rendendo.
+    float forcaDoTurbo() const {
+        return kForcaMinimaTurbo + (1.0f - kForcaMinimaTurbo) * reservaTurbo_;
+    }
 
     /// Quanto resta no tanque de turbo, de 0 a 1. O mostrador dele fica no
     /// diagnostico, e nao na cabine: saber quanto sobrou custa largar os

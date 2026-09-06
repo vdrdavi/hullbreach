@@ -228,10 +228,18 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // O alvo vem da reparticao, e a rampa que ja estava aqui pelo turbo
         // cuida da mudanca de graca: mexer no motor no conves nao da um
         // solavanco na nave, ela so passa a puxar para outra velocidade.
-        velocidade_ = aproximar(velocidade_,
-                                turbo_ ? velocidadeDeTurboDe(energia_.motor)
-                                       : velocidadeDeCruzeiroDe(energia_.motor),
-                                3.0f, dt);
+        //
+        // O turbo nao entrega o teto inteiro: o ganho sobre o cruzeiro e
+        // multiplicado pela forca, que cai junto com a carga. Como o alvo se
+        // move a cada passo enquanto o tanque esvazia, a nave **murcha durante o
+        // proprio turbo** em vez de fechar o motor de uma vez -- e e essa queda
+        // continua que conta ao piloto quanto ainda ha no tanque sem ele ter de
+        // atravessar a nave para ler o medidor.
+        const float cruzeiro = velocidadeDeCruzeiroDe(energia_.motor);
+        const float alvo =
+            turbo_ ? cruzeiro + (velocidadeDeTurboDe(energia_.motor) - cruzeiro) * forcaDoTurbo()
+                   : cruzeiro;
+        velocidade_ = aproximar(velocidade_, alvo, 3.0f, dt);
     }
     pose_.posicao += rotacaoDe(pose_).frente() * velocidade_ * dt;
 

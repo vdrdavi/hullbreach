@@ -142,7 +142,13 @@ void FlightScene::avancarVista(float dt) {
         destrocos_.atualizar(dt);
     }
 
-    fov_ = aproximar(fov_, voo_.turbo() ? kFovTurbo : kFovBase, 4.0f, dt);
+    // A vista abre **na medida em que a nave de fato acelera**, e nao pelo
+    // estado da tecla. Com o turbo perdendo forca junto com a carga, o alvo
+    // binario mentia: a tela alargava o mesmo tanto para o primeiro segundo de
+    // tanque cheio e para o ultimo, quando a nave mal empurra. `fatorTurbo` e a
+    // velocidade real medida contra o teto, entao o quadro fecha junto com o
+    // motor murchando.
+    fov_ = aproximar(fov_, kFovBase + (kFovTurbo - kFovBase) * voo_.fatorTurbo(), 4.0f, dt);
 
     // Camera de terceira pessoa com atraso: da peso as manobras.
     const Mat3 rotacao = Flight::rotacaoDe(voo_.pose());

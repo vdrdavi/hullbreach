@@ -110,6 +110,18 @@ turbo, quarenta e cinco para encher do vazio — nove de espera por segundo de
 motor aberto. Nessa proporção o turbo não é um jeito de viajar e sim uma carta
 que se joga: cinco segundos corridos custam quase um minuto de espera.
 
+**O turbo perde força junto com a carga** (`Flight::forcaDoTurbo`): o ganho sobre
+o cruzeiro é multiplicado por um fator que cai de 1 (cheio) a `kForcaMinimaTurbo`
+(fim do tanque), então a nave murcha durante o próprio turbo em vez de fechar o
+motor de uma vez. É o que faz o turbo **informar a própria carga**, já que o
+medidor mora em outra tela; o piso existe para os últimos goles não virarem lixo.
+Consequência: `kTurboPorPonto` virou assíntota — a rampa da velocidade não
+alcança o teto antes de a carga cair (pico medido de 168 contra 185 nominais), e
+como aquele teto é o limite de segurança da colisão, a nave só se afasta dele. O
+fov da cabine, o ganho do ambiente e o brilho do escapamento acompanham sozinhos
+porque os três leem `fatorTurbo()` — velocidade real contra o teto —, e não a
+tecla.
+
 **Zerar o tanque superaquece o motor** (`Flight::superaquecido`), e ele só reabre
 com uma divisão inteira do medidor de volta (`kReligarTurbo`) — não com o
 primeiro pingo de recarga. Sem essa trava havia um furo que a média escondia: com
