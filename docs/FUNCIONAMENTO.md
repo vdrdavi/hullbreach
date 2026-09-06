@@ -1235,31 +1235,76 @@ Hoje ele sai de um **tanque** que o próprio uso esvazia e que se refaz sozinho,
 devagar, enquanto o motor está fechado. Correr deixou de ser gratuito e passou a
 ser uma decisão sobre *quando* correr.
 
-Dois números, e eles são a troca inteira:
+Três números, e eles são a troca inteira:
 
 | constante | valor | o que significa |
 | --- | --- | --- |
 | `kConsumoTurbo` | 0,2 tanque/s | o tanque cheio dá **cinco segundos** de turbo |
 | `kSegundosParaEncher` | 15 s | do vazio ao cheio — **três segundos de espera por segundo de motor aberto** |
+| `kReligarTurbo` | 0,2 tanque | zerar o tanque **superaquece** o motor, e ele só reabre com uma divisão inteira de volta |
 
-A recarga não tem carência antes de começar, e não precisa ter: o orçamento é a
-razão entre as duas taxas, não o jeito de gastar, então pulsar a tecla não rende
-nada de extra que segurá-la não renderia.
+#### O superaquecimento
+
+Zerar o tanque não deixa o turbo "quase disponível": tranca o motor até a recarga
+devolver **uma divisão inteira** do medidor — um segundo de turbo, três de espera.
+
+Sem essa trava o recurso tinha um furo grande, e ele não aparecia na média. Com o
+tanque no zero, soltar e apertar de novo devolvia turbo a cada quadro, e a nave
+ficava permanentemente rápida em picotes. A velocidade média continuava sendo a
+razão entre as duas taxas — era verdade, e era a coisa errada a olhar. O que se
+perdia era a **escolha da hora**, e era ela, e não a média, que fazia o turbo ser
+um recurso em vez de um botão.
+
+Medido com um piloto de teste que segura a tecla o tempo todo, o ciclo estabiliza
+exatamente onde deve:
+
+```
+t= 0,02  tanque 5,00 s  motor ABERTO
+t= 5,03  tanque 0,00 s  SUPERAQUECIDO      <- gastou os cinco segundos
+t= 8,05  tanque 0,99 s  motor ABERTO       <- três segundos depois, uma divisão
+t= 9,07  tanque 0,00 s  SUPERAQUECIDO
+t=12,08  tanque 0,99 s  motor ABERTO
+```
+
+Ciclo de 4,03 s: **1,02 s de motor aberto para 3,01 s de espera**, os 25% que as
+duas taxas prometem. E pulsar deixou de compensar — no mesmo teste, alternar a
+tecla a cada quadro rendeu 26,8% do tempo com o motor aberto contra 37,9% de
+quem simplesmente a segurou.
+
+O limiar vale **uma divisão** porque é a unidade que o medidor já desenhava: a
+regra fica visível na barra, sem precisar de texto explicando. Com o motor
+quente, a primeira marca deixa de ser escala e vira **alvo** — acesa e mais
+grossa, ela mostra onde a barra precisa chegar.
+
+A recarga não tem carência própria além disso, e não precisa ter: a trava já *é*
+a espera, e uma segunda em cima dela faria o mesmo serviço duas vezes.
+
+A leitura do estado usa a reserva do passo anterior, então a trava só entra no
+passo seguinte ao que zerou o tanque — um sexagésimo de segundo de turbo a mais.
+A alternativa seria repetir a decisão no meio do consumo, o que custaria mais em
+leitura do que vale em precisão.
 
 A viagem começa com o tanque **cheio**, e não vazio. O turbo precisa ser usado
 uma vez para que faltar depois signifique alguma coisa — quem nunca sentiu a nave
 abrir não sente falta do que não conhece.
 
 Uma consequência que não é medidor nenhum: `Flight::turbo()` deixou de ser a
-tecla. Sem reserva o motor não abre, então a HUD da cabine compara as duas coisas
-e escreve `[SEM TURBO]` em vermelho quando o jogador aperta com o tanque seco.
-Sem isso, o turbo escasso seria um controle que às vezes simplesmente não
-funciona.
+tecla. Com o motor quente ele não abre, então a HUD da cabine escreve
+`[SUPERAQUECIDO]` em vermelho — sem isso, o turbo escasso seria um controle que
+às vezes simplesmente não funciona, o que se lê como defeito e não como regra.
+
+E esse aviso fica no ar **enquanto a trava durar**, e não só quando alguém aperta
+a tecla. É a diferença entre estado da nave e resposta a comando, e ela importa
+aqui: sem o medidor por perto, ver o aviso sumir é o único jeito de o piloto
+saber a hora de voltar a poder correr. Como resposta à tecla, ele o obrigaria a
+ficar tentando para descobrir. O que o aviso **não** diz é quanto falta — isso
+continua custando a travessia até o painel, que é a regra do recurso.
 
 **O medidor fica no diagnóstico (seção 13), longe da cabine**, e isso é regra do
 recurso e não escolha de layout: saber quanto resta custa largar os controles e
 atravessar a nave, o mesmo pedágio que o casco sempre cobrou. Na cabine o piloto
-descobre que o tanque acabou pelo `[SEM TURBO]` e pela nave que não abre.
+descobre que o motor superaqueceu pelo `[SUPERAQUECIDO]` na HUD e pela nave que
+não abre, e vê o aviso sumir quando ela volta a poder correr.
 
 ### O sonar de rota
 
@@ -1508,13 +1553,17 @@ mudam (ARQUITETURA § Como se chamam as telas).
 
 **O medidor de turbo mora aqui, e isso é regra do recurso, não escolha de
 layout.** Saber quanto resta custa largar os controles e atravessar a nave, o
-mesmo pedágio que o casco sempre cobrou: na cabine o piloto sabe quando o tanque
-*acabou* (a nave não abre, e a HUD escreve `[SEM TURBO]`), mas quanto falta, só
+mesmo pedágio que o casco sempre cobrou: na cabine o piloto sabe *que* o motor
+superaqueceu (a HUD diz, e diz o tempo todo), mas quanto falta para religar, só
 aqui. A barra do turbo é mais baixa que a do casco de propósito — as duas medem a
 mesma nave, mas perder o casco acaba a viagem e ficar sem turbo só a deixa lenta,
 e a hierarquia da tela tem de dizer isso. As divisões que a cortam são cinco, uma
 por segundo: o número ao lado está em segundos, então meia barra se lê como "dois
-segundos e meio" sem ninguém precisar contar.
+segundos e meio" sem ninguém precisar contar — e a primeira delas é o limiar do
+religamento, que acende em âmbar quando o motor está quente. O painel inteiro
+troca para esse âmbar nessa hora, o mesmo do casco `AVARIADO`: nos dois casos a
+nave não está quebrada, está pior do que deveria e volta ao normal, e o painel
+não pode ter dois vocabulários para isso.
 
 Dois detalhes que a segunda barra obrigou. Os medidores agora se rotulam
 (`CASCO`, `TURBO`) — sem isso, a de cima seria "a barra" e a de baixo "a outra",

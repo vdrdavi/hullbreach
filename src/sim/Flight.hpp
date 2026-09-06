@@ -175,6 +175,19 @@ public:
     static constexpr float kSegundosDeTurbo = 1.0f / kConsumoTurbo;
     static constexpr float kSegundosParaEncher = 15.0f;
     static constexpr float kRecargaTurbo = 1.0f / kSegundosParaEncher;
+    /// **Zerar o tanque superaquece o motor**, e dai ele nao volta a abrir ao
+    /// primeiro pingo de recarga: exige uma **divisao inteira** do medidor de
+    /// volta -- um segundo de turbo, tres de espera.
+    ///
+    /// Sem esta trava o recurso tinha um furo grande: com o tanque no zero,
+    /// soltar e apertar de novo devolvia o turbo a cada quadro, e a nave ficava
+    /// permanentemente rapida em picotes. A media de velocidade continuava a
+    /// razao entre as duas taxas, mas o jogador deixava de ter de **escolher a
+    /// hora** -- e era essa escolha, e nao a media, que fazia o turbo escasso.
+    ///
+    /// O limiar e uma divisao porque e a unidade que o medidor ja desenha: a
+    /// regra fica visivel na barra, sem precisar de texto explicando.
+    static constexpr float kReligarTurbo = 1.0f / kSegundosDeTurbo;
 
     /// Ate onde a bancada do conves leva o casco de volta. O reparo de campo
     /// nao deixa a nave nova: acima disto o estrago e de estaleiro, e a viagem
@@ -262,9 +275,15 @@ public:
     /// diagnostico, e nao na cabine: saber quanto sobrou custa largar os
     /// controles e atravessar a nave, o mesmo pedagio que o casco ja cobra.
     float reservaTurbo() const { return reservaTurbo_; }
-    /// Ha turbo para abrir? A cabine pergunta isto para responder a tecla de
-    /// quem apertou com o tanque seco -- resposta ao comando, e nao medidor.
-    bool temTurbo() const { return reservaTurbo_ > 0.0f; }
+    /// O motor superaqueceu e o turbo esta trancado ate a recarga devolver a
+    /// primeira divisao do medidor. Enquanto isto for verdade, a tecla nao abre
+    /// nada -- e a cabine diz isso na HUD, porque um controle que nao responde
+    /// sem explicar por que parece defeito.
+    ///
+    /// E o **estado da nave**, e nao a resposta a um comando: a cabine o mostra
+    /// mesmo com ninguem apertando nada, e e assim que o piloto sabe a hora de
+    /// voltar a poder correr sem ter o medidor na frente.
+    bool superaquecido() const { return superaquecido_; }
 
     /// 0 no cruzeiro, 1 no turbo: a medida de esforco do motor.
     float fatorTurbo() const;
@@ -313,8 +332,9 @@ private:
 
     float velocidade_{velocidadeDeCruzeiroDe(kPontoNeutro)};
     float batida_{0.0f};
-    /// O tanque de turbo.
+    /// O tanque de turbo, e se o motor esta trancado esperando esfriar.
     float reservaTurbo_{1.0f};
+    bool superaquecido_{false};
     float casco_{1.0f};
     bool turbo_{false};
 

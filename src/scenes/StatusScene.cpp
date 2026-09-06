@@ -25,7 +25,10 @@ constexpr SDL_Color kCorPerda{235, 110, 105, 255};
 /// jeito, e sim outro recurso, com outro relogio -- o casco so cai, o tanque
 /// sobe e desce. Duas cores para nao se lerem como um medidor partido em dois.
 constexpr SDL_Color kCorTurbo{130, 225, 255, 255};
-constexpr SDL_Color kCorTurboSeco{90, 118, 138, 255};
+/// O motor trancado esperando esfriar. E o mesmo ambar do casco AVARIADO, de
+/// proposito: nos dois casos a nave nao esta quebrada, esta pior do que deveria
+/// e volta ao normal -- e o painel nao pode ter dois vocabularios para isso.
+constexpr SDL_Color kCorTurboQuente{245, 190, 110, 255};
 
 /// Faixas do casco: a cor e a palavra saem da mesma fronteira, para o texto
 /// nunca dizer "integro" sobre uma barra ja alaranjada. A fronteira do critico
@@ -183,13 +186,14 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     // O tanque de turbo. Ele mora aqui, e nao na cabine, e isso e a regra do
     // recurso e nao uma escolha de layout: saber quanto resta custa largar os
     // controles e atravessar a nave, exatamente o pedagio que o casco ja cobra.
-    // Na cabine o piloto sabe quando o tanque acabou (a nave nao abre); quanto
-    // falta, so aqui.
+    // Na cabine o piloto sabe **que** o motor superaqueceu (a HUD diz); quanto
+    // falta para religar, so aqui.
     //
     // E o mostrador sobe na frente de quem esta lendo: a nave continua voando
     // com o painel aberto e, no piloto automatico, com o motor fechado -- entao
     // o tanque se recompoe justamente enquanto se olha para ele.
-    const SDL_Color corTurbo = voo_.temTurbo() ? kCorTurbo : kCorTurboSeco;
+    const bool quente = voo_.superaquecido();
+    const SDL_Color corTurbo = quente ? kCorTurboQuente : kCorTurbo;
 
     ctx.fonte.desenhar(ctx.renderer, "TURBO", trilho.x, y, kCorApagada, 1.0f);
     char tanque[32];
@@ -212,10 +216,15 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     // como "dois segundos e meio" sem ninguem precisar contar.
     for (int marca = 1; marca < static_cast<int>(Flight::kSegundosDeTurbo); ++marca) {
         const float fracao = static_cast<float>(marca) / Flight::kSegundosDeTurbo;
+        // A primeira marca e o limiar do religamento, e com o motor quente ela
+        // deixa de ser escala e vira **alvo**: acesa, ela mostra onde a barra
+        // precisa chegar. E por isso que o limiar vale uma divisao inteira --
+        // assim a regra cabe no desenho que a barra ja tinha.
+        const bool limiar = quente && marca == 1;
         draw::retanguloTela(ctx.renderer,
-                            SDL_FRect{trilhoTurbo.x + trilhoTurbo.w * fracao, trilhoTurbo.y, 1.0f,
-                                      trilhoTurbo.h},
-                            kCorVidro);
+                            SDL_FRect{trilhoTurbo.x + trilhoTurbo.w * fracao, trilhoTurbo.y,
+                                      limiar ? 2.0f : 1.0f, trilhoTurbo.h},
+                            limiar ? kCorTurboQuente : kCorVidro);
     }
     draw::retanguloTela(ctx.renderer, trilhoTurbo, kCorBorda, false);
     y += trilhoTurbo.h + linha;
@@ -226,9 +235,14 @@ void StatusScene::desenhar(Context& ctx, float /*alpha*/) {
     // por celula: a frase que ja esteve aqui tinha 47 caracteres e vazava pelos
     // dois lados.
     char recarga[72];
-    std::snprintf(recarga, sizeof(recarga), "recarrega sozinho: %.0f s do vazio ao cheio",
-                  static_cast<double>(Flight::kSegundosParaEncher));
-    ctx.fonte.desenharCentralizado(ctx.renderer, recarga, meio, y, kCorApagada, 1.0f);
+    if (quente) {
+        std::snprintf(recarga, sizeof(recarga), "SUPERAQUECIDO: religa na primeira marca");
+    } else {
+        std::snprintf(recarga, sizeof(recarga), "recarrega sozinho: %.0f s do vazio ao cheio",
+                      static_cast<double>(Flight::kSegundosParaEncher));
+    }
+    ctx.fonte.desenharCentralizado(ctx.renderer, recarga, meio, y,
+                                   quente ? kCorTurboQuente : kCorApagada, 1.0f);
 
     const char* dica = ctx.input.temGamepad() ? "B ou Y: voltar ao conves"
                                               : "Esc ou Q: voltar ao conves";

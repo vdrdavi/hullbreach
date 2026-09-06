@@ -134,6 +134,7 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     // A viagem comeca com o tanque cheio, e nao vazio: o turbo precisa ser
     // usado uma vez para que faltar depois signifique alguma coisa.
     reservaTurbo_ = 1.0f;
+    superaquecido_ = false;
 }
 
 void Flight::encerrar(Context& ctx) {
@@ -199,12 +200,26 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // A tecla nao basta: sem tanque o turbo simplesmente nao abre, e a nave
         // segue no cruzeiro. Quem apertou merece a resposta, mas ela e da
         // cabine (que compara a tecla com este `turbo_`), e nao daqui.
-        turbo_ = comando.turbo && temTurbo();
+        // O superaquecimento, avaliado antes de a tecla valer: zerar o tanque
+        // tranca o motor, e destrancar exige a primeira divisao do medidor de
+        // volta. E o que impede o furo obvio do recurso -- com o tanque no
+        // zero, soltar e apertar devolvia turbo a cada quadro, e a nave ficava
+        // rapida em picotes sem que ninguem tivesse de escolher a hora.
+        //
+        // A leitura usa a reserva do passo anterior, entao a trava so entra no
+        // passo seguinte ao que zerou o tanque. Um sexagesimo de segundo de
+        // turbo a mais, e a alternativa seria repetir esta decisao no meio do
+        // consumo, abaixo.
+        if (reservaTurbo_ <= 0.0f) {
+            superaquecido_ = true;
+        } else if (reservaTurbo_ >= kReligarTurbo) {
+            superaquecido_ = false;
+        }
+        turbo_ = comando.turbo && !superaquecido_;
         // O tanque esvazia enquanto o motor esta aberto e se refaz sozinho
-        // enquanto esta fechado -- tres vezes mais devagar do que gasta. Nao ha
-        // carencia antes de a recarga comecar: sem ela, pulsar a tecla nao
-        // rende nada de extra, porque o orcamento e a razao entre as duas taxas
-        // e nao o jeito de gastar.
+        // enquanto esta fechado -- tres vezes mais devagar do que gasta. A
+        // recarga nao tem carencia propria: a trava acima ja e a espera, e uma
+        // segunda em cima dela so faria o mesmo servico duas vezes.
         if (turbo_) {
             reservaTurbo_ = std::max(0.0f, reservaTurbo_ - kConsumoTurbo * dt);
         } else {

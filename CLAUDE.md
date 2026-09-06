@@ -107,12 +107,21 @@ interior sempre sobrevive à cabine.
 **O turbo é escasso.** Ele sai de um tanque (`Flight::reservaTurbo`) que o uso
 esvazia e que se refaz sozinho enquanto o motor está fechado: cinco segundos de
 turbo, quinze para encher do vazio — três de espera por segundo de motor aberto.
-Não há carência antes de a recarga começar, e não precisa haver: o orçamento é a
-razão entre as duas taxas, então pulsar a tecla não rende mais que segurá-la.
-`Flight::turbo()` deixou de ser a tecla — sem reserva o motor não abre —, e por
-isso a HUD da cabine compara as duas e escreve `[SEM TURBO]`: é resposta ao
-comando, não medidor. O medidor fica no diagnóstico, longe da cabine, de
-propósito: é o mesmo pedágio que o casco cobra.
+
+**Zerar o tanque superaquece o motor** (`Flight::superaquecido`), e ele só reabre
+com uma divisão inteira do medidor de volta (`kReligarTurbo`) — não com o
+primeiro pingo de recarga. Sem essa trava havia um furo que a média escondia: com
+o tanque no zero, soltar e apertar devolvia turbo a cada quadro e a nave ficava
+rápida em picotes. A velocidade média continuava a razão entre as taxas, mas o
+jogador deixava de ter de **escolher a hora**, e era isso que fazia o turbo ser
+recurso e não botão. O limiar vale uma divisão porque é a unidade que a barra já
+desenhava: a regra fica visível no medidor sem texto explicando.
+
+`Flight::turbo()` não é a tecla, então a HUD da cabine escreve `[SUPERAQUECIDO]`
+— e o deixa no ar **enquanto a trava durar**, não só quando alguém aperta. É
+estado da nave, não resposta a comando: sem o medidor por perto, ver o aviso
+sumir é como o piloto sabe a hora de voltar a correr. O medidor fica no
+diagnóstico, longe da cabine, de propósito: é o mesmo pedágio que o casco cobra.
 
 **O fim da nave.** Cada batida tira 0,125 do casco; `Flight::destruida()` é
 `casco() <= 0`, e não um segundo estado a manter em dia. A partir daí o `Flight`

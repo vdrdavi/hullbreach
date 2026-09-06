@@ -247,23 +247,26 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy - 6.0f, 1.0f, 4.0f}, corMira);
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy + 2.0f, 1.0f, 4.0f}, corMira);
 
-    // HUD. O sufixo responde a **tecla**, e nao ao tanque: quem aperta o turbo
-    // com o tanque seco precisa saber por que a nave nao abriu, e essa e uma
-    // pergunta diferente de "quanto me resta", que se responde no diagnostico.
-    // Sem isto, o turbo escasso viraria um controle que as vezes simplesmente
-    // nao funciona.
-    const bool pediuTurbo = !transicao_.saindo() && ctx.input.acaoAtiva(Acao::Confirmar);
+    // HUD. O sufixo do superaquecimento fica no ar enquanto a trava durar, e
+    // **nao** so quando alguem aperta a tecla: sem o medidor por perto (ele mora
+    // no diagnostico), ver o aviso sumir e o unico jeito de o piloto saber a
+    // hora de voltar a poder correr. Como resposta a tecla, ele obrigaria a
+    // ficar tentando para descobrir.
+    //
+    // O que ele nao diz e **quanto** falta -- isso continua custando a travessia
+    // ate o painel, que e a regra do recurso.
     char linha[64];
     std::snprintf(linha, sizeof(linha), "VEL %3.0f u/s%s",
                   static_cast<double>(voo_.velocidade()),
-                  voo_.turbo() ? "  [TURBO]" : (pediuTurbo ? "  [SEM TURBO]" : ""));
+                  voo_.turbo() ? "  [TURBO]"
+                               : (voo_.superaquecido() ? "  [SUPERAQUECIDO]" : ""));
     const SDL_FPoint tamanho = ctx.fonte.medir(linha, 1.0f);
     draw::retanguloTela(ctx.renderer, SDL_FRect{8.0f, 8.0f, tamanho.x + 16.0f, tamanho.y + 12.0f},
                         kCorPainel);
     ctx.fonte.desenhar(ctx.renderer, linha, 16.0f, 14.0f,
-                       voo_.turbo()   ? SDL_Color{255, 200, 130, 255}
-                       : pediuTurbo   ? SDL_Color{235, 130, 120, 255}
-                                      : kCorHud,
+                       voo_.turbo()            ? SDL_Color{255, 200, 130, 255}
+                       : voo_.superaquecido()  ? SDL_Color{235, 130, 120, 255}
+                                               : kCorHud,
                        1.0f);
 
     const char* dica = ctx.input.temGamepad()

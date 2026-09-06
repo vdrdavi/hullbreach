@@ -8,8 +8,9 @@ inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanqu
 turbo; e a repartição de energia, onde se decide quanto do motor, do sensor e da
 blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do risco de
 outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco segundos e leva
-quinze para se refazer, então correr deixou de ser de graça e virou uma decisão
-sobre quando correr. No canto oposto do convés há uma
+quinze para se refazer, e esgotá-lo superaquece o motor — que só volta a abrir
+depois de esfriar o bastante para render um segundo inteiro. Correr deixou de ser
+de graça e virou uma decisão sobre quando correr. No canto oposto do convés há uma
 bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
 lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a
 parede é o **sonar de rota**, um bipe que aperta a cadência conforme a próxima

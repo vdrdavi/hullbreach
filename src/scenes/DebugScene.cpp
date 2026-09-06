@@ -175,10 +175,11 @@ void desenharNave(Coluna& coluna, Flight* voo) {
     coluna.campo("batida", texto("%.2f", static_cast<double>(voo->batida())));
     // O turbo cru ao lado dos segundos, como o casco: o diagnostico traduz para
     // o jogador, aqui interessa o valor que o resto do codigo compara.
-    coluna.campo("turbo", texto("%.3f  (%.1f s)", static_cast<double>(voo->reservaTurbo()),
-                                static_cast<double>(voo->reservaTurbo() *
-                                                    Flight::kSegundosDeTurbo)),
-                 voo->temTurbo() ? kCorValor : kCorRotulo);
+    coluna.campo("turbo",
+                 texto("%.3f  (%.1f s)%s", static_cast<double>(voo->reservaTurbo()),
+                       static_cast<double>(voo->reservaTurbo() * Flight::kSegundosDeTurbo),
+                       voo->superaquecido() ? "  SUPERAQUECIDO" : ""),
+                 voo->superaquecido() ? kCorAlerta : kCorValor);
     // A reparticao e o segundo lugar em que se olha quando a nave parece outra:
     // motor, sensor, casco e o que sobrou na reserva, mais os segundos de aviso
     // que os dois primeiros produzem juntos.
