@@ -54,6 +54,10 @@ private:
     /// agora e a deriva dos destrocos, e o atraso maior abre distancia deles.
     static constexpr float kPerseguicaoMorte = 2.2f;  // 1/s
 
+    /// Quanto a camera recua alem do atraso da perseguicao. Existe porque o
+    /// atraso vale zero com a nave parada; veja o corpo.
+    float recuoDeApoio() const;
+
     /// Comeca a sequencia de destruicao: estilhaca a nave e larga os controles.
     void comecarDestruicao();
     /// Tudo que a vista tem de perseguir depois do passo do voo: a camera, o
@@ -87,6 +91,7 @@ private:
     float tempo_{0.0f};
 
     Audio::SomId somSaida_{0};
+    Audio::SomId somPartida_{0};
 };
 
 }  // namespace jogo

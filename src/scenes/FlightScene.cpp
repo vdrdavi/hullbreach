@@ -16,6 +16,11 @@ namespace {
 constexpr SDL_Color kCorEspaco{5, 6, 14, 255};
 constexpr SDL_Color kCorHud{198, 226, 245, 255};
 constexpr SDL_Color kCorPainel{8, 12, 24, 170};
+/// O verde do motor esperando. E a unica coisa verde do jogo, de proposito: a
+/// nave fala em azul (mira, sonar), em ambar (superaquecido) e em vermelho
+/// (casco). Um aviso que so aparece uma vez por viagem nao pode ser confundido
+/// com nenhum dos que aparecem sempre.
+constexpr SDL_Color kCorPartida{120, 235, 140, 255};
 
 /// Suavizacao exponencial estavel em passo fixo.
 float aproximar(float atual, float alvo, float taxa, float dt) {
@@ -38,7 +43,7 @@ void FlightScene::aoEntrar(Context& ctx) {
     // cabine abre colada na nave e recua sozinha no primeiro meio segundo.
     const Mat3 rotacao = Flight::rotacaoDe(voo_.pose());
     camera_ = voo_.pose().posicao + rotacao * Vec3{0.0f, 1.4f, 5.0f} -
-              rotacao.frente() * (voo_.velocidade() / kPerseguicaoCamera);
+              rotacao.frente() * (voo_.velocidade() / kPerseguicaoCamera + recuoDeApoio());
     cameraAnterior_ = camera_;
     cameraCima_ = rotacao.cima();
     estrelas_.centralizar(camera_);
@@ -56,6 +61,7 @@ void FlightScene::aoEntrar(Context& ctx) {
     }
 
     somSaida_ = ctx.audio.carregar("audio/back.wav");
+    somPartida_ = ctx.audio.carregar("audio/confirm.wav");
     voo_.definirAbafado(false);
 }
 
@@ -119,7 +125,18 @@ void FlightScene::atualizar(Context& ctx, float dt) {
     Flight::Comando comando;
     if (!transicao_.saindo() && !morrendo_) {
         comando.eixo = ctx.input.eixoMovimento();
-        comando.turbo = ctx.input.acaoAtiva(Acao::Confirmar);
+        // A mesma tecla, dois papeis, e nao ha ambiguidade porque os dois nunca
+        // valem ao mesmo tempo: com a nave desligada ela **da a partida**, e a
+        // partir dai ela e o acelerador. Sem isso o primeiro toque abriria o
+        // turbo de uma nave parada e gastaria tanque para nada.
+        if (!voo_.partiu()) {
+            if (ctx.input.acaoPressionada(Acao::Confirmar)) {
+                ctx.audio.tocar(somPartida_);
+                voo_.darPartida();
+            }
+        } else {
+            comando.turbo = ctx.input.acaoAtiva(Acao::Confirmar);
+        }
     }
     voo_.atualizar(ctx, dt, comando);
     avancarVista(dt);
@@ -130,6 +147,22 @@ void FlightScene::acompanhar(Context& ctx, float dt) {
     // daqui, em piloto automatico, como receberia da cortina fechando.
     voo_.atualizar(ctx, dt, Flight::Comando{});
     avancarVista(dt);
+}
+
+float FlightScene::recuoDeApoio() const {
+    // A distancia da camera a nave era **so** o atraso da perseguicao: no
+    // regime, perseguir a taxa k um alvo que corre a v deixa a camera v/k
+    // atras. Isso funcionava enquanto a nave nunca estava parada -- e agora ela
+    // comeca parada, o alvo nao foge, o atraso e zero e ela nasce colada na
+    // lente, ocupando meia tela.
+    //
+    // Este recuo cobre exatamente o que falta para o cruzeiro, entao a distancia
+    // total e a mesma parada e em cruzeiro, e ele sai de cena sozinho conforme a
+    // partida sobe a velocidade: a camera nao salta, ela troca uma fonte de
+    // distancia pela outra. Acima do cruzeiro ele e zero e o afastamento do
+    // turbo volta a ser so o atraso, que e o que da o peso.
+    const float cruzeiro = Flight::velocidadeDeCruzeiroDe(voo_.energia().motor);
+    return std::max(0.0f, cruzeiro - voo_.velocidade()) / kPerseguicaoCamera;
 }
 
 void FlightScene::avancarVista(float dt) {
@@ -153,7 +186,10 @@ void FlightScene::avancarVista(float dt) {
     // Camera de terceira pessoa com atraso: da peso as manobras.
     const Mat3 rotacao = Flight::rotacaoDe(voo_.pose());
     cameraAnterior_ = camera_;
-    const Vec3 desejada = voo_.pose().posicao + rotacao * Vec3{0.0f, 1.4f, 5.0f};
+    // O recuo de apoio entra aqui, no alvo, e nao so no nascimento da camera: e
+    // para onde ela converge, e nao de onde ela parte.
+    const Vec3 desejada =
+        voo_.pose().posicao + rotacao * Vec3{0.0f, 1.4f, 5.0f} - rotacao.frente() * recuoDeApoio();
     const float perseguicao = morrendo_ ? kPerseguicaoMorte : kPerseguicaoCamera;
     camera_ = lerp(camera_, desejada, 1.0f - std::exp(-perseguicao * dt));
     cameraCima_ = normalizar(lerp(cameraCima_, rotacao.cima(), 1.0f - std::exp(-6.0f * dt)));
@@ -220,7 +256,13 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     float profundidade = 0.0f;
     if (!morrendo_ &&
         cena_.projetar(posicao + rotacao * Vec3{0.0f, 0.05f, 1.75f}, motor, &profundidade)) {
-        const float intensidade = 0.35f + 0.65f * voo_.fatorTurbo();
+        // A base deixou de ser fixa em 0,35: ela sobe com a velocidade ate o
+        // cruzeiro. Fixa, o escapamento ficava aceso com o motor desligado e
+        // nao dizia nada durante a partida -- `fatorTurbo` so comeca a contar
+        // do cruzeiro para cima, entao a subida inteira passava sem brilho.
+        const float cruzeiro = Flight::velocidadeDeCruzeiroDe(voo_.energia().motor);
+        const float motorAberto = std::clamp(voo_.velocidade() / cruzeiro, 0.0f, 1.0f);
+        const float intensidade = 0.35f * motorAberto + 0.65f * voo_.fatorTurbo();
         const float tremor = 0.9f + 0.1f * std::sin(tempo_ * 30.0f);
         draw::brilhoAditivo(ctx.renderer, motor, cena_.escalaEmTela(profundidade) * 0.55f * tremor,
                       SDL_FColor{1.0f * intensidade, 0.55f * intensidade, 0.22f * intensidade,
@@ -253,6 +295,22 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy - 6.0f, 1.0f, 4.0f}, corMira);
     draw::retanguloTela(ctx.renderer, SDL_FRect{cx - 0.5f, cy + 2.0f, 1.0f, 4.0f}, corMira);
 
+    // O motor esperando a partida. Fica acima da mira, como o resto do que a
+    // cabine tem a dizer, e pulsa porque e a unica coisa na tela que o jogador
+    // precisa fazer -- parado, ele se perderia num quadro cheio de rocha.
+    if (!voo_.partiu()) {
+        const float pulso = 0.6f + 0.4f * std::sin(tempo_ * 4.0f);
+        const SDL_Color cor{kCorPartida.r, kCorPartida.g, kCorPartida.b,
+                            static_cast<Uint8>(std::clamp(pulso * 255.0f, 0.0f, 255.0f))};
+        const float linha = ctx.fonte.alturaLinha(1.0f);
+        ctx.fonte.desenharCentralizado(ctx.renderer, "MOTOR EM ESPERA", cx, cy - 26.0f - linha,
+                                       cor, 1.0f);
+        ctx.fonte.desenharCentralizado(
+            ctx.renderer,
+            ctx.input.temGamepad() ? "A: dar partida" : "Espaco: dar partida", cx, cy - 26.0f,
+            cor, 1.0f);
+    }
+
     // HUD. O sufixo do superaquecimento fica no ar enquanto a trava durar, e
     // **nao** so quando alguem aperta a tecla: sem o medidor por perto (ele mora
     // no diagnostico), ver o aviso sumir e o unico jeito de o piloto saber a
@@ -264,13 +322,16 @@ void FlightScene::desenhar(Context& ctx, float alpha) {
     char linha[64];
     std::snprintf(linha, sizeof(linha), "VEL %3.0f u/s%s",
                   static_cast<double>(voo_.velocidade()),
-                  voo_.turbo() ? "  [TURBO]"
-                               : (voo_.superaquecido() ? "  [SUPERAQUECIDO]" : ""));
+                  !voo_.partiu()          ? "  [DESLIGADO]"
+                  : voo_.turbo()          ? "  [TURBO]"
+                  : voo_.superaquecido()  ? "  [SUPERAQUECIDO]"
+                                          : "");
     const SDL_FPoint tamanho = ctx.fonte.medir(linha, 1.0f);
     draw::retanguloTela(ctx.renderer, SDL_FRect{8.0f, 8.0f, tamanho.x + 16.0f, tamanho.y + 12.0f},
                         kCorPainel);
     ctx.fonte.desenhar(ctx.renderer, linha, 16.0f, 14.0f,
-                       voo_.turbo()            ? SDL_Color{255, 200, 130, 255}
+                       !voo_.partiu()          ? kCorPartida
+                       : voo_.turbo()          ? SDL_Color{255, 200, 130, 255}
                        : voo_.superaquecido()  ? SDL_Color{235, 130, 120, 255}
                                                : kCorHud,
                        1.0f);

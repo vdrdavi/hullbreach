@@ -104,6 +104,18 @@ congelou (adiante). A `FlightScene` guarda uma referência para o `Flight` da
 cena de baixo; isso é seguro porque a pilha só desempilha do topo, então o
 interior sempre sobrevive à cabine.
 
+**A nave começa desligada e parada** (`Flight::partiu`), e o piloto dá a partida
+uma vez por viagem — a cabine pede em verde, a única cor que só esse aviso usa.
+Desligada, a **colisão**, o **sensor** e o **ambiente** estão desligados junto:
+não se cobra estrago de quem ainda não tem o comando, nem se alarma sobre um
+perigo que não existe. A tecla da partida é a mesma do turbo, sem ambiguidade
+porque as duas nunca valem ao mesmo tempo. O arranque tem rampa própria
+(`kTaxaArranque`, 95% do cruzeiro em 4,4 s) e sai dela por um sinalizador, não
+por comparar velocidade — a batida também deixa a nave lenta, e a volta dela não
+é uma partida. Duas coisas da cabine dependiam de a nave nunca estar parada e
+tiveram de mudar: a distância da câmera, que era só o atraso da perseguição (veja
+`recuoDeApoio`), e a base do brilho do escapamento, que era fixa.
+
 **O turbo é escasso.** Ele sai de um tanque (`Flight::reservaTurbo`) que o uso
 esvazia e que se refaz sozinho enquanto o motor está fechado: cinco segundos de
 turbo, quarenta e cinco para encher do vazio — nove de espera por segundo de
