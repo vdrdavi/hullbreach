@@ -226,19 +226,6 @@ public:
     /// diz AVARIADO.
     static constexpr float kCascoCritico = 0.3f;
 
-    /// **A nave comeca desligada e parada**, e quem a liga e o piloto, uma vez
-    /// por viagem. Antes disso o motor esta mudo, o sensor nao le nada e a
-    /// colisao nao acontece -- a nave nao esta viajando ainda, entao a rocha
-    /// que a deriva trouxesse ate o casco seria um estrago sem ninguem no
-    /// comando.
-    ///
-    /// O arranque e o unico momento em que a nave sobe do zero, e sobe **mais
-    /// devagar** que uma aceleracao qualquer, porque e a partida que se esta
-    /// vendo. Passado o cruzeiro, a rampa volta a ser a de sempre e isto nao
-    /// acontece mais na viagem.
-    void darPartida();
-    bool partiu() const { return partiu_; }
-
     /// Comeca a viagem: sorteia o campo de rochas e acende o ambiente.
     void iniciar(Context& ctx, Uint32 semente);
     /// Encerra a viagem, apagando o ambiente em fade.
@@ -374,12 +361,7 @@ private:
     float alcance_{alcanceDoSensorDe(kPontoNeutro)};
     float alcanceVisivel_{alcanceVisivelDe(kPontoNeutro)};
 
-    float velocidade_{0.0f};
-    /// A nave ja foi ligada, e se ainda esta na subida da partida. O segundo nao
-    /// se deduz do primeiro: uma batida tambem derruba a velocidade, e a volta
-    /// dela nao e uma partida.
-    bool partiu_{false};
-    bool arrancando_{false};
+    float velocidade_{velocidadeDeCruzeiroDe(kPontoNeutro)};
     float batida_{0.0f};
     /// O tanque de turbo, e se o motor esta trancado esperando esfriar.
     float reservaTurbo_{1.0f};

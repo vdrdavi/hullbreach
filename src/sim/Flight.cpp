@@ -41,11 +41,6 @@ constexpr float kRaioCampo = 280.0f;
 constexpr int kQuantidadeRochas = 4600;
 constexpr float kRaioNave = 2.0f;
 
-/// A subida da partida, bem mais lenta que a rampa de sempre (3,0): de zero ao
-/// cruzeiro em uns quatro segundos, que e o tempo de a coisa parecer uma nave
-/// pesada saindo da inercia em vez de um numero indo para o lugar.
-constexpr float kTaxaArranque = 0.7f;  // 1/s
-
 // Batida: a nave quase para e o baque decai por si.
 constexpr float kVelocidadeAposBatida = 18.0f;
 constexpr float kDecaimentoBatida = 3.4f;  // 1/s
@@ -107,10 +102,7 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     energia_ = Reparticao{};
     alcance_ = alcanceDoSensorDe(energia_.sensor);
     alcanceVisivel_ = alcanceVisivelDe(energia_.sensor);
-    // Parada e desligada: a viagem comeca quando o piloto der a partida.
-    velocidade_ = 0.0f;
-    partiu_ = false;
-    arrancando_ = false;
+    velocidade_ = velocidadeDeCruzeiroDe(energia_.motor);
     turbo_ = false;
     batida_ = 0.0f;
     casco_ = 1.0f;
@@ -149,14 +141,6 @@ void Flight::iniciar(Context& ctx, Uint32 semente) {
     // usado uma vez para que faltar depois signifique alguma coisa.
     reservaTurbo_ = 1.0f;
     superaquecido_ = false;
-}
-
-void Flight::darPartida() {
-    if (partiu_ || destruida()) {
-        return;
-    }
-    partiu_ = true;
-    arrancando_ = true;
 }
 
 void Flight::encerrar(Context& ctx) {
@@ -258,21 +242,10 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
         // continua que conta ao piloto quanto ainda ha no tanque sem ele ter de
         // atravessar a nave para ler o medidor.
         const float cruzeiro = velocidadeDeCruzeiroDe(energia_.motor);
-        // Desligada, o alvo e zero: a nave nao se arrasta, ela espera.
         const float alvo =
-            !partiu_ ? 0.0f
-                     : (turbo_ ? cruzeiro +
-                                     (velocidadeDeTurboDe(energia_.motor) - cruzeiro) *
-                                         forcaDoTurbo()
-                               : cruzeiro);
-        // O arranque tem rampa propria, e sai dela sozinho ao alcancar o
-        // cruzeiro. Um sinalizador, e nao uma comparacao de velocidade, porque
-        // a batida tambem deixa a nave lenta e a recuperacao dela nao e uma
-        // partida -- seria a unica na viagem a subir em camera lenta.
-        if (arrancando_ && velocidade_ >= cruzeiro - 0.5f) {
-            arrancando_ = false;
-        }
-        velocidade_ = aproximar(velocidade_, alvo, arrancando_ ? kTaxaArranque : 3.0f, dt);
+            turbo_ ? cruzeiro + (velocidadeDeTurboDe(energia_.motor) - cruzeiro) * forcaDoTurbo()
+                   : cruzeiro;
+        velocidade_ = aproximar(velocidade_, alvo, 3.0f, dt);
     }
     pose_.posicao += rotacaoDe(pose_).frente() * velocidade_ * dt;
 
@@ -284,10 +257,7 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     // colisao: sem batida nao ha baque, som nem estrago, e a nave atravessa o
     // campo. Fora dessa build a condicao e uma constante falsa e some na
     // compilacao.
-    // A colisao comeca com a viagem. Antes da partida a nave esta parada e o
-    // jogador nao esta pilotando nada: a rocha que a deriva trouxesse ate o
-    // casco seria estrago cobrado de quem ainda nao tinha o comando.
-    if (partiu_ && !destruida() && !invencivel()) {
+    if (!destruida() && !invencivel()) {
         checarColisao(ctx);
     }
     batida_ = std::max(0.0f, batida_ - kDecaimentoBatida * dt);
@@ -298,10 +268,9 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     // perdida, leva o alvo a zero: a sequencia de destruicao termina em silencio,
     // que e de onde a tela de fim comeca.
     const float alvo =
-        (destruida() || !partiu_)
-            ? 0.0f
-            : (kAmbienteCruzeiro + (kAmbienteTurbo - kAmbienteCruzeiro) * fatorTurbo()) *
-                  (abafado_ ? kAbafamento : 1.0f);
+        destruida() ? 0.0f
+                    : (kAmbienteCruzeiro + (kAmbienteTurbo - kAmbienteCruzeiro) * fatorTurbo()) *
+                          (abafado_ ? kAbafamento : 1.0f);
     ambiente_ = aproximar(ambiente_, alvo, kTaxaAmbiente, dt);
     ctx.audio.ajustarGanho(vozAmbiente_, ambiente_);
 
@@ -348,10 +317,7 @@ void Flight::atualizar(Context& ctx, float dt, const Comando& comando) {
     // unidades, um piscar antes da batida; no maximo, a 95.
     const float livre = rochas_.distanciaNaRota(pose_.posicao, rotacaoDe(pose_).frente(),
                                                 kRaioNave + kCorredorSonar, alcance_);
-    // Com a nave desligada o sensor tambem esta: nao ha leitura, e por isso nao
-    // ha bipe. Medir e bipar sobre uma nave que ainda nao pode ser atingida
-    // seria um alarme sobre um perigo que nao existe.
-    proximidade_ = (destruida() || !partiu_) ? 0.0f : 1.0f - livre / alcance_;
+    proximidade_ = destruida() ? 0.0f : 1.0f - livre / alcance_;
     // O relogio **satura** no intervalo mais longo em vez de zerar com a rota
     // livre: assim a rocha que entra no alcance dispara o bipe no mesmo passo,
     // e nao ate 0,85 s depois -- justo o atraso que um aviso nao pode ter.

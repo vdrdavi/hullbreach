@@ -1308,55 +1308,6 @@ A fronteira dos 30% é uma só: quem escreve `CRITICO` no diagnóstico (`faixaDo
 em `StatusScene.cpp`) lê a mesma `Flight::kCascoCritico`. A sirene não pode estar
 tocando sobre um mostrador que ainda diz `AVARIADO`.
 
-### A nave começa desligada
-
-A viagem não começa com a nave voando: ela começa **parada**, e o piloto tem de
-dar a partida. Isso acontece uma vez por viagem, na primeira vez que ele senta na
-cabine, e a cabine pede em verde — `MOTOR EM ESPERA`, pulsando acima da mira, com
-a tecla logo abaixo. Verde é a única coisa verde do jogo, de propósito: a nave
-fala em azul (mira, sonar), âmbar (superaquecido) e vermelho (casco), e um aviso
-que aparece uma vez só não pode ser confundido com os que aparecem sempre.
-
-**Desligada, a nave não é só uma nave a zero u/s.** Três coisas estão desligadas
-junto, e cada uma por um motivo:
-
-- **a colisão**. A nave está parada e o jogador ainda não tem o comando; a rocha
-  que a deriva trouxesse até o casco seria estrago cobrado de quem não podia
-  desviar;
-- **o sensor**. Sem leitura não há bipe — medir e alarmar sobre uma nave que
-  ainda não pode ser atingida seria avisar de um perigo que não existe;
-- **o ambiente**. O alvo do ganho é zero, então o rugido do casco nasce com a
-  partida em vez de já estar lá. É a mesma rampa de sempre que faz a subida.
-
-**A tecla de turbo é a mesma da partida**, e não há ambiguidade porque as duas
-nunca valem ao mesmo tempo: com a nave desligada ela liga o motor, e a partir daí
-é o acelerador. Sem essa separação o primeiro toque abriria o turbo de uma nave
-parada e gastaria tanque para nada.
-
-O arranque tem **rampa própria**, bem mais lenta que a de sempre (0,7 contra
-3,0): medido, a nave chega a 95% do cruzeiro em 4,4 s. E sai dela sozinho ao
-alcançar o cruzeiro, por um sinalizador e não por uma comparação de velocidade —
-a batida também deixa a nave lenta, e a recuperação dela não é uma partida; seria
-a única na viagem a subir em câmera lenta.
-
-Duas coisas na cabine tiveram de mudar para a nave parada não ficar errada, e as
-duas eram defeitos que ninguém via porque a nave nunca estava parada:
-
-- **a distância da câmera era só o atraso da perseguição.** No regime, perseguir
-  a taxa `k` um alvo que corre a `v` deixa a câmera `v/k` atrás dele — mas com a
-  nave parada o alvo não foge, o atraso é zero e ela nascia colada na lente,
-  ocupando meia tela. Hoje um *recuo de apoio* cobre exatamente o que falta para
-  o cruzeiro (`max(0, cruzeiro - v) / k`), então a distância total é a mesma
-  parada e em cruzeiro, e ele sai de cena sozinho conforme a partida sobe a
-  velocidade: a câmera não salta, troca uma fonte de distância pela outra. Acima
-  do cruzeiro ele é zero e o afastamento do turbo volta a ser só o atraso, que é
-  o que dá o peso;
-- **o escapamento tinha base fixa** em 0,35, então brilhava com o motor
-  desligado — e não dizia nada durante a partida, porque `fatorTurbo()` só começa
-  a contar do cruzeiro para cima e a subida inteira passava sem brilho. Hoje a
-  base sobe com a velocidade até o cruzeiro, e o escapamento acende junto com a
-  nave.
-
 ### O turbo é escasso
 
 O turbo já foi de graça: segurar a tecla abria o motor pelo tempo que se
