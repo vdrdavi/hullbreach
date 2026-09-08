@@ -1,30 +1,28 @@
 # Jogo SDL3
 
-Você anda pelo interior de uma nave em 2D, usa o painel de pilotagem do convés e
-a tela vira um voo 3D: um caça low poly atravessando um campo de estrelas gerado
-proceduralmente, desviando de asteroides — que não vêm em chuva constante: o
-campo tem bolsões e veios, a viagem alterna vazio e aperto, as pedras derivam
-(desviar é prever onde elas vão estar) e, de vez em quando, aparece um monólito
-que não se contorna no último segundo: ou você decidiu cedo, ou bateu. O mesmo
-painel também abre o diagnóstico da nave, que mostra o casco — que perde um pedaço a cada rocha,
-inclusive nas batidas que acontecem enquanto você anda lá dentro — e o tanque de
-turbo; e a repartição de energia, onde se decide quanto do motor, do turbo, do
-sensor e da blindagem a nave vai ter: a soma é fixa, então toda vantagem sai do
-risco de outro lugar. **O turbo é escasso:** sai de um tanque que dá cinco
-segundos e leva quarenta e cinco para se refazer, e esgotá-lo superaquece o motor
-— que só volta a abrir depois de esfriar o bastante para render um segundo
-inteiro. Quanto ele puxa e quantos segundos dura são o mesmo ponto de energia,
-que vai de um empurrão de dois segundos a um de nove. E ele **vai
-perdendo força junto com a carga**, então a nave murcha debaixo da sua mão em vez
-de fechar o motor de uma vez: é assim que o turbo conta quanto ainda tem sem você
-precisar atravessar a nave para ler o medidor. Correr
-deixou de ser de graça e virou uma decisão sobre quando correr. No canto oposto do convés há uma
-bancada onde se solda o casco de volta, um ponto de cada vez. Enquanto você anda
-lá dentro, a nave segue voando sozinha lá fora — e o único aviso que atravessa a
-parede é o **sonar de rota**, um bipe que aperta a cadência conforme a próxima
-rocha se aproxima. No fim do casco a nave passa a avisar: a sirene
-toca e o convés pisca em vermelho. Quando o casco acaba, a nave
-se despedaça na vista externa e a viagem termina ali.
+Você anda pelo interior de uma nave em 2D e, no painel de pilotagem do convés, a
+tela vira um voo 3D: um caça *low poly* atravessando um campo de estrelas e
+asteroides gerado proceduralmente. O campo não vem em chuva constante — tem
+bolsões e veios, alterna vazio e aperto, e as pedras derivam, então desviar é
+prever onde elas vão estar. De vez em quando passa um monólito, que não se
+contorna no último segundo: ou você decidiu cedo, ou bateu.
+
+O mesmo painel abre o **diagnóstico** — o casco, que perde um pedaço a cada rocha
+(inclusive nas batidas enquanto você anda lá dentro), e o tanque de turbo — e a
+**repartição de energia**, onde se decide quanto de motor, turbo, sensor e
+blindagem a nave terá: a soma é fixa, toda vantagem sai do risco de outro lugar.
+O **turbo é escasso** — cinco segundos de tanque, quarenta e cinco para refazer —
+e esgotá-lo superaquece o motor; ainda por cima ele perde força junto com a
+carga. Correr deixou de ser de graça e virou uma decisão sobre quando correr.
+
+No canto oposto do convés, uma bancada solda o casco de volta, um ponto de cada
+vez. Enquanto você anda lá dentro, a nave voa sozinha lá fora — e o único aviso
+que atravessa a parede é o **sonar de rota**, um bipe que aperta a cadência
+conforme a próxima rocha se aproxima. No fim do casco a sirene toca e o convés
+pisca em vermelho; quando ele acaba, a nave se despedaça na vista externa e a
+viagem termina ali.
+
+![Tela inicial: o logotipo HULLBREACH — "HULL" em aço, "BREACH" em âmbar e uma fenda faiscando entre as sílabas — sobre um campo de estrelas que deriva ao fundo, com as opções Jogar, Volume, Tela cheia e Sair](docs/menu.png)
 
 ![Interior da nave: o convés de tiles com o painel de pilotagem ao fundo e as três opções que ele oferece — assumir os controles, o diagnóstico da nave e a repartição de energia](docs/interior.png)
 
