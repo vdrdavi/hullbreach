@@ -57,7 +57,7 @@ antes de escrever o `.cpp`.
 
 | Tipo e arquivo | Nome de ficção (docs, comentários, commits) | Título na tela | Como se chega |
 | --- | --- | --- | --- |
-| `MenuScene` | o menu | — | tela inicial |
+| `MenuScene` | o menu | `HULLBREACH` (logotipo) | tela inicial |
 | `InteriorScene` | o convés | — | `Jogar` no menu |
 | `FlightScene` | a cabine | — | `E` no painel de pilotagem |
 | `StatusScene` | o diagnóstico da nave | `DIAGNOSTICO DA NAVE` | `Q` no painel de pilotagem |
@@ -100,9 +100,15 @@ que a tabela existe: divergir tudo bem, ter que adivinhar não.
 
 Aqui não há uma regra só, porque não são todas o mesmo tipo de tela:
 
-- **Os mundos** (`InteriorScene`, `FlightScene`) e o menu **não têm título**.
-  Quem diz onde o jogador está é a imagem; um rótulo por cima do convés seria
-  legenda de foto.
+- **Os mundos** (`InteriorScene`, `FlightScene`) **não têm título**. Quem diz
+  onde o jogador está é a imagem; um rótulo por cima do convés seria legenda de
+  foto.
+- **O menu** leva o **logotipo do jogo**, `HULLBREACH`, e não um rótulo da tela:
+  é a única onde o nome do jogo aparece, então ele é desenhado estilizado — o
+  fulgor, a sombra dura, `HULL` no aço e `BREACH` no âmbar do alarme, com a
+  fenda faiscando entre as sílabas (`MenuScene::desenharTitulo`). Não segue a
+  regra de posicionar por `alturaLinha()` de um painel: é arte, não legenda, e o
+  bloco de opções é que se acomoda na faixa que sobra abaixo dele.
 - **Os painéis do convés** (`StatusScene`, `PowerScene`, `RepairScene`) levam o
   nome do assunto: substantivo, sem artigo e sem verbo — `DIAGNOSTICO DA NAVE`,
   não `DIAGNOSTICAR O CASCO` nem `PAINEL DO CASCO`. Eles se abrem por cima do

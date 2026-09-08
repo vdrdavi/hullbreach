@@ -1636,6 +1636,26 @@ A tela inicial: navegação por teclado ou gamepad, som nas transições, e as
 preferências (volume e tela cheia) ajustadas com esquerda/direita sobre a opção
 selecionada.
 
+O fundo é um **campo de estrelas 2D procedural** (`MenuScene::desenharFundo`),
+sem relação com o `Starfield` 3D do voo: um gradiente vertical em faixas — quase
+preto no pé, um respiro de azul no topo — e 220 estrelas espalhadas de uma
+semente fixa (`gerarCampoEstelar`), de modo que o céu do menu é sempre o mesmo.
+Cada estrela tem uma profundidade sorteada ao quadrado — muitas fracas e
+distantes, poucas grandes e próximas —, e dela saem o tamanho, o brilho e o
+`parallax`: a camada próxima deriva na horizontal mais rápido que a distante, com
+wrap na borda. O brilho cintila por um seno de fase e velocidade próprias, e as
+poucas maiores ganham um halo aditivo. Tudo anda pelo `tempo_` da cena, o mesmo
+que pulsa o logotipo.
+
+No topo fica o **logotipo** `HULLBREACH` — a única tela onde o nome do jogo
+aparece, e por isso desenhado estilizado em `MenuScene::desenharTitulo`: um
+fulgor aditivo alaranjado que respira, uma sombra dura deslocada, `HULL` no aço
+frio da nave intacta e `BREACH` no âmbar do alarme, e entre as duas sílabas a
+**fenda** — traços curtos empilhados seguindo um zigue-zague fixo, cada um com um
+ponto de brilho, tremendo depressa. Não é um rótulo de tela como o dos painéis
+do convés; é arte, e o bloco de opções se acomoda na faixa que sobra abaixo
+dele, com as alturas vindo da fonte para o layout acompanhar uma troca do atlas.
+
 Dois detalhes que parecem miudezas e não são. O rótulo da opção é montado na hora
 (`"Volume: " + ...`), porque ele mostra o valor de uma preferência que muda. E o
 *blip* de confirmação toca **depois** de o volume mudar, e por isso já sai no

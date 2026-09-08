@@ -392,8 +392,10 @@ silenciado, o dispositivo de áudio é suspenso — o ambiente e a sirene retoma
 ponto exato, sem emenda e sem terem adiantado. `Esc`/`Enter` continua, `M` volta
 ao menu.
 
-**O menu** tem `Jogar`, `Volume` (←→ ajusta de 5 em 5; o blip toca já no volume
-novo, então o som é a própria prévia), `Tela cheia` e `Sair`.
+**O menu** abre com o logotipo `HULLBREACH` no topo — `HULL` em aço, `BREACH` em
+âmbar e uma fenda faiscando entre as sílabas — sobre um campo de estrelas que
+deriva devagar ao fundo, e traz `Jogar`, `Volume` (←→ ajusta de 5 em 5; o blip
+toca já no volume novo, então o som é a própria prévia), `Tela cheia` e `Sair`.
 
 **As preferências** — volume, tela cheia e os vínculos de cada ação — ficam em
 `config.ini`, no diretório de configuração do sistema (`~/.local/share/jogo-sdl/jogo/`
